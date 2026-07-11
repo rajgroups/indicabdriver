@@ -1,0 +1,179 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Environment variables
+.env
+*.env
+.env.*
+!.env.example
+
+# iOS related
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Flutter/flutter_export_environment.sh
+
+# Android related
+**/android/gradle/wrapper/gradle-wrapper.properties
+**/android/.gradle/
+**/android/local.properties
+**/android/**/gradle-wrapper.jar
+**/android/.settings/
+**/android/**/build/
+**/android/captures/
+**/android/gradle/
+**/android/*.iml
+
+# macOS related
+**/macos/Pods/
+**/macos/.symlinks/
+**/macos/Flutter/Flutter.podspec
+**/macos/Flutter/App.framework
+**/macos/Flutter/Flutter.framework
+**/macos/Flutter/Generated.xcconfig
+**/macos/Flutter/app.flx
+**/macos/Flutter/app.zip
+**/macos/Flutter/flutter_assets/
+**/macos/ServiceDefinitions.json
+**/macos/Runner/GeneratedPluginRegistrant.*
+**/macos/Flutter/flutter_export_environment.sh
+
+# Web related
+**/web/favicon.png
+**/web/manifest.json
+
+# Windows related
+**/windows/Flutter/GeneratedPluginRegistrant.*
+**/windows/Flutter/Flutter.dll
+**/windows/Flutter/flutter_assets/
+**/windows/Runner/Debug/
+**/windows/Runner/Profile/
+**/windows/Runner/Release/
+**/windows/Runner/GeneratedPluginRegistrant.*
+**/windows/Runner/objs/
+**/windows/Runner/obs/
+**/windows/Runner/*.user
+**/windows/Runner/*.suo
+**/windows/Runner/*.sdf
+**/windows/Runner/*.opensdf
+**/windows/Runner/*.VC.db
+**/windows/Runner/*.VC.VC.opendb
+**/windows/Runner/ipch/
+**/windows/out/
+**/windows/*.VC.db
+**/windows/*.VC.VC.opendb
+
+# Linux related
+**/linux/Flutter/GeneratedPluginRegistrant.*
+**/linux/Flutter/flutter_assets/
+**/linux/Runner/Debug/
+**/linux/Runner/Profile/
+**/linux/Runner/Release/
+**/linux/Runner/GeneratedPluginRegistrant.*
+**/linux/Runner/objs/
+**/linux/Runner/obs/
+**/linux/Runner/*.user
+**/linux/Runner/*.suo
+**/linux/Runner/*.sdf
+**/linux/Runner/*.opensdf
+**/linux/Runner/*.VC.db
+**/linux/Runner/*.VC.VC.opendb
+**/linux/out/
+**/linux/*.VC.db
+**/linux/*.VC.VC.opendb
+
+# Coverage
+**/coverage/
+
+# Firebase
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase.json
+**/.firebase/
+
+# Keystore files (for app signing)
+**/*.jks
+**/*.keystore
+**/key.properties
+
+# Secret files
+**/secrets/
+**/secret/
+**/credentials/
+**/private/
+**/keys/
+
+# Dependency directories
+node_modules/
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Logs
+logs/
+*.log
+
+# Package manager lock files (optional - uncomment if you want to ignore)
+# pubspec.lock
