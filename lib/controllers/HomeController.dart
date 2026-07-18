@@ -79,9 +79,17 @@ class HomeController extends GetxController {
     try {
       final socketService = Get.find<SocketService>();
       final token = await SecureStorageService().read(StorageKeys.token);
-      final actualToken = (token != null && token.isNotEmpty) ? token : 'dummy_driver_token_1';
+      if (token == null || token.isEmpty) {
+        Get.snackbar(
+          'Offline',
+          'Missing auth token. Please log in again.',
+          backgroundColor: Colors.white,
+          colorText: AppColors.textPrimary,
+        );
+        return;
+      }
 
-      await socketService.connect(actualToken);
+      await socketService.connect(token);
 
       // Listen for incoming booking requests
       socketService.on('booking_request', _handleIncomingBookingRequest);

@@ -18,6 +18,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
   Timer? _reconnectTimer;
   Timer? _pingTimer;
   bool _shouldReconnect = true;
+  bool _isAppInForeground = true;
   final BookingRepository _bookingRepository = BookingRepository(ApiClient());
 
   /// Base URL for the WebSocket connection.
@@ -46,9 +47,12 @@ class SocketService extends GetxService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // When the app comes back to the foreground, check if the socket is connected.
       print('WebSocket: App resumed, checking connection.');
       ensureConnected();
+    } else if (state == AppLifecycleState.paused) {
+      print('WebSocket: App is paused.');
+    } else if (state == AppLifecycleState.detached) {
+      disconnect(); // Disconnect only when the app is being terminated.
     }
   }
 

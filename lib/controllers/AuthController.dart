@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:indicab_driver/constants/Keys.dart';
@@ -110,28 +111,39 @@ class AuthController extends GetxController {
         return;
       }
 
-      // Ensure socket is connected
       if (!socketService.isConnected.value) {
-        await socketService.connect(token);
+        await socketService.ensureConnected();
+      }
+
+      if (!socketService.isConnected.value) {
+        print('WebSocket is offline. Skipping driver location send.');
+        return;
       }
 
       // Check and request location permission
       var permissionStatus = await Permission.location.request();
-      if (permissionStatus.isGranted) {
-        Position position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high);
-
-        final String driverId = driverIdValue.toString();
-        final locationData = {
-          "type": "driver_location",
-          "driver_id": int.tryParse(driverId) ?? 0, // Use the converted string
-          "latitude": position.latitude,
-          "longitude": position.longitude,
-        };
-        socketService.send(locationData);
-      } else {
+      if (!permissionStatus.isGranted) {
         print("Location permission not granted.");
+        return;
       }
+
+      final lifecycleState = WidgetsBinding.instance.lifecycleState;
+      if (lifecycleState != null && lifecycleState != AppLifecycleState.resumed) {
+        print('App is not in the foreground. Skipping driver location send.');
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
+      final String driverId = driverIdValue.toString();
+      final locationData = {
+        "type": "driver_location",
+        "driver_id": int.tryParse(driverId) ?? 0,
+        "latitude": position.latitude,
+        "longitude": position.longitude,
+      };
+      socketService.send(locationData);
     } catch (e) {
       print("Error sending location update: $e");
     }
