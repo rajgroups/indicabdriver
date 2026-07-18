@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:indicab_driver/controllers/ride_controller.dart';
-import 'package:indicab_driver/repositories/ride_repository.dart';
+import 'package:indicab_driver/controllers/RideController.dart';
+import 'package:indicab_driver/repositories/RideRepository.dart';
 
 class RideBinding extends Bindings {
   @override

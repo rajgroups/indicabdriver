@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:indicab_driver/constants/Colors.dart';
-import 'package:indicab_driver/controllers/ride_controller.dart';
+import 'package:indicab_driver/controllers/RideController.dart';
 import 'package:indicab_driver/routes/names.dart';
 
 class RideView extends GetView<RideController> {

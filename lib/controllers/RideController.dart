@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:indicab_driver/repositories/ride_repository.dart';
+import 'package:indicab_driver/repositories/RideRepository.dart';
 import 'package:indicab_driver/models/booking_response.dart';
 
 enum RideStatus { awaiting_otp, in_progress, completed }

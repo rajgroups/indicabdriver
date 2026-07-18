@@ -7,7 +7,7 @@ import 'package:indicab_driver/models/booking_response.dart';
 import 'package:indicab_driver/network/client.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/repository/BookingRepository.dart';
-import 'package:indicab_driver/controllers/ride_controller.dart';
+import 'package:indicab_driver/controllers/RideController.dart';
 
 /// A map to hold event handlers.
 typedef EventCallback = void Function(dynamic data);
@@ -40,6 +40,16 @@ class SocketService extends GetxService with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     disconnect();
     super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // When the app comes back to the foreground, check if the socket is connected.
+      print('WebSocket: App resumed, checking connection.');
+      ensureConnected();
+    }
   }
 
   /// Establishes a connection to the WebSocket server.
