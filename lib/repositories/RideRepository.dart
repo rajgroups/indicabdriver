@@ -7,7 +7,7 @@ class RideRepository {
 
   Future<BookingResponseModel> startRide(int bookingId, String otp) async {
     final response = await _apiClient.post(
-      '${ApiEndpoints.bookings}/$bookingId/start',
+      ApiEndpoints.startBooking(bookingId),
       data: {'start_otp': otp},
     );
 
@@ -20,7 +20,7 @@ class RideRepository {
 
   Future<BookingResponseModel> completeRide(int bookingId, String otp) async {
     final response = await _apiClient.post(
-      '${ApiEndpoints.bookings}/$bookingId/complete',
+      ApiEndpoints.completeBooking(bookingId),
       data: {'end_otp': otp},
     );
 

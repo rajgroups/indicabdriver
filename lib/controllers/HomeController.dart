@@ -6,6 +6,7 @@ import 'package:indicab_driver/repository/BookingRepository.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/services/SocketService.dart';
 import 'package:indicab_driver/services/SecureStorageService.dart';
+import 'package:indicab_driver/services/StorageService.dart';
 import 'package:indicab_driver/constants/Keys.dart';
 import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/models/booking_response.dart';
@@ -35,6 +36,7 @@ class HomeController extends GetxController {
   final RxBool isAccepting = false.obs;
 
   Timer? _countdownTimer;
+  static const String _driverIdKey = 'driverId';
 
   @override
   void onInit() {
@@ -174,38 +176,55 @@ class HomeController extends GetxController {
     _countdownTimer?.cancel();
 
     final booking = incomingRequest.value!;
-    final bookingId = booking.id ?? 1;
-    final vehicleId = booking.vehicleId ?? 1;
+    final bookingId = booking.id;
+    final vehicleId = booking.vehicleId;
+    final driverIdValue = StorageService().read(_driverIdKey);
+    final driverId = int.tryParse(driverIdValue?.toString() ?? '');
 
     try {
-      final response = await _bookingRepository.acceptBooking(bookingId, vehicleId);
+      if (bookingId == null) {
+        isAccepting.value = false;
+        Get.snackbar('Error', 'Booking ID is missing.');
+        return;
+      }
 
-      isAccepting.value = false;
-      showIncomingRequest.value = false;
-      incomingRequest.value = null;
+      if (driverId == null) {
+        isAccepting.value = false;
+        Get.snackbar('Error', 'Driver ID is missing.');
+        return;
+      }
 
+      final response = await _bookingRepository.acceptBooking(
+        bookingId,
+        driverId,
+        vehicleId,
+      );
+
+    print(response);
       if (response.status && response.data != null) {
+        // Success: Hide the request and navigate to the ride screen.
+        _clearRequestState();
         Get.toNamed(RouteNames.ride, arguments: response.data);
       } else {
-        Get.snackbar('Error', response.message, backgroundColor: Colors.white);
+        // Failure from API (e.g., already on a trip)
+        isAccepting.value = false; // Allow user to try again if appropriate
+        Get.snackbar(
+          'Error',
+          response.message,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
       print('Error accepting booking: $e');
-
-      // Fallback for demo testing
       isAccepting.value = false;
-      showIncomingRequest.value = false;
-      incomingRequest.value = null;
-
       Get.snackbar(
-        'Demo Mode',
-        'Proceeding with mock acceptance (network offline).',
+        'Error',
+        'Failed to accept booking. Please try again.',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: AppColors.textPrimary,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
-
-      Get.toNamed(RouteNames.ride, arguments: booking);
     }
   }
 

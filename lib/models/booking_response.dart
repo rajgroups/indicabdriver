@@ -14,7 +14,9 @@ class BookingResponseModel {
     final data = json['data'];
 
     return BookingResponseModel(
-      status: rawStatus is bool ? rawStatus : rawStatus.toString() == 'true',
+      status: rawStatus is bool
+          ? rawStatus
+          : ['true', 'success'].contains(rawStatus?.toString()),
       message: json['message']?.toString() ?? '',
       data: data is Map<String, dynamic>
           ? BookingDataModel.fromJson(data)
@@ -37,6 +39,7 @@ class BookingDataModel {
     this.dropAddress,
     this.startOtp,
     this.estimatedAmount,
+    this.finalAmount,
     this.driverName,
     this.vehicleNumber,
     this.vehicleName,
@@ -54,6 +57,7 @@ class BookingDataModel {
   final String? dropAddress;
   final String? startOtp;
   final double? estimatedAmount;
+  final double? finalAmount;
   final String? driverName;
   final String? vehicleNumber;
   final String? vehicleName;
@@ -74,6 +78,9 @@ class BookingDataModel {
       startOtp: json['start_otp']?.toString(),
       estimatedAmount: json['estimated_amount'] != null
           ? double.tryParse(json['estimated_amount'].toString())
+          : null,
+      finalAmount: json['final_amount'] != null
+          ? double.tryParse(json['final_amount'].toString())
           : null,
       driverName: json['driver'] is Map<String, dynamic>
           ? (json['driver']['name']?.toString())

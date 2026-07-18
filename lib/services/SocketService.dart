@@ -258,7 +258,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
       return;
     }
 
-    final bookingData = await _fetchBookingData(bookingNo);
+    final bookingData = BookingDataModel.fromJson(booking);
 
     if (Get.currentRoute != RouteNames.ride) {
       if (bookingData != null) {

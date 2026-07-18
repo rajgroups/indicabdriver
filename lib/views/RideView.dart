@@ -212,7 +212,7 @@ class RideView extends GetView<RideController> {
   }
 
   Widget _buildOtpSection() {
-    final expectedOtpLength = controller.booking.value?.startOtp?.length ?? 4;
+    final expectedOtpLength = controller.booking.value?.startOtp?.length ?? 6;
     final hintDashes = '-' * expectedOtpLength;
 
     return Column(
@@ -301,7 +301,8 @@ class RideView extends GetView<RideController> {
   }
 
   Widget _buildCompletedSection() {
-    final fare = controller.booking.value?.estimatedAmount ?? 245.00;
+    final booking = controller.booking.value;
+    final fare = booking?.finalAmount ?? booking?.estimatedAmount ?? 0.0;
     return Column(
       children: [
         const Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),

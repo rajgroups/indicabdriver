@@ -6,5 +6,8 @@ class ApiEndpoints {
   static const vehicletype = '/vehicle-types';
   static const vehicletypelist = '/vehicles';
   static const bookings = '/bookings';
-  static String bookingDetails(String bookingNo) => '/bookings/$bookingNo';
+  static String bookingDetails(String id) => '/bookings/$id';
+  static String acceptBooking(int bookingId) => '/bookings/$bookingId/accept';
+  static String startBooking(int bookingId) => '/bookings/$bookingId/start';
+  static String completeBooking(int bookingId) => '/bookings/$bookingId/complete';
 }

@@ -1,6 +1,7 @@
 import 'package:indicab_driver/models/booking_request.dart';
 import 'package:indicab_driver/models/booking_response.dart';
 import 'package:indicab_driver/network/client.dart';
+import 'package:indicab_driver/network/network_exceptions.dart';
 import 'package:indicab_driver/network/endpoints.dart';
 
 class BookingRepository {
@@ -29,7 +30,7 @@ class BookingRepository {
     bool includeOtp = true,
   }) async {
     final response = await _apiClient.get(
-      '${ApiEndpoints.bookings}/$bookingNo',
+      ApiEndpoints.bookingDetails(bookingNo),
       queryParameters: {if (includeOtp) 'include_otp': 1},
     );
 
@@ -43,18 +44,34 @@ class BookingRepository {
 
   Future<BookingResponseModel> acceptBooking(
     int bookingId,
-    int vehicleId,
+    int driverId,
+    int? vehicleId,
   ) async {
-    final response = await _apiClient.post(
-      '${ApiEndpoints.bookings}/$bookingId/accept',
-      data: {'vehicle_id': vehicleId},
-    );
+    final payload = <String, dynamic>{
+      'driver_id': driverId,
+    };
 
-    final payload = response.data;
-    if (payload is Map<String, dynamic>) {
-      return BookingResponseModel.fromJson(payload);
+    if (vehicleId != null) {
+      payload['vehicle_id'] = vehicleId;
     }
 
-    throw Exception('Unexpected booking response format.');
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.acceptBooking(bookingId),
+        data: payload,
+      );
+
+      final responsePayload = response.data;
+      if (responsePayload is Map<String, dynamic>) {
+        return BookingResponseModel.fromJson(responsePayload);
+      }
+
+      throw Exception('Unexpected booking response format.');
+    } on NetworkException catch (e) {
+      // Re-throw API errors with a structured response so the controller can display the message.
+      return BookingResponseModel(status: false, message: e.message, data: null);
+    } catch (e) {
+      throw Exception('Failed to accept booking: $e');
+    }
   }
 }
