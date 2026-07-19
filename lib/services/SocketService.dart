@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:indicab_driver/models/booking_response.dart';
 import 'package:indicab_driver/network/client.dart';
@@ -258,9 +258,20 @@ class SocketService extends GetxService with WidgetsBindingObserver {
       return;
     }
 
-    final bookingData = BookingDataModel.fromJson(booking);
+    // Handle cancellation from any screen
+    if (status == 'cancelled') {
+      Get.snackbar(
+        'Ride Cancelled',
+        'The booking was cancelled.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+      Get.offAllNamed(RouteNames.home);
+      return;
+    }
 
     if (Get.currentRoute != RouteNames.ride) {
+      final bookingData = BookingDataModel.fromJson(booking);
       if (bookingData != null) {
         Get.offAllNamed(RouteNames.ride, arguments: bookingData);
       }
@@ -269,13 +280,21 @@ class SocketService extends GetxService with WidgetsBindingObserver {
 
     // If already in RideView, update state dynamically
     if (Get.isRegistered<RideController>()) {
-      final rideCtrl = Get.find<RideController>();
-      if (bookingData != null) {
-        rideCtrl.booking.value = bookingData;
-        if (status == 'started') {
-          rideCtrl.rideStatus.value = RideStatus.in_progress;
-        } else if (status == 'completed') {
-          rideCtrl.rideStatus.value = RideStatus.completed;
+      final bookingId = booking['id']?.toString();
+      if (bookingId == null) return;
+
+      // When ride starts or completes, fetch full details to get updated OTP or final fare.
+      if (status == 'started' || status == 'completed') {
+        final bookingData = await _fetchBookingData(bookingId);
+        if (bookingData != null && Get.isRegistered<RideController>()) {
+          final rideCtrl = Get.find<RideController>();
+          rideCtrl.booking.value = bookingData;
+
+          if (status == 'started') {
+            rideCtrl.rideStatus.value = RideStatus.in_progress;
+          } else if (status == 'completed') {
+            rideCtrl.rideStatus.value = RideStatus.completed;
+          }
         }
       }
     }

@@ -37,6 +37,7 @@ class HomeController extends GetxController {
 
   Timer? _countdownTimer;
   static const String _driverIdKey = 'driverId';
+  bool _checkedActiveRide = false;
 
   @override
   void onInit() {
@@ -45,12 +46,18 @@ class HomeController extends GetxController {
     if (isOnline.value) {
       _connectSocket();
     }
+    Future.microtask(_checkActiveRide);
   }
 
   @override
   void onClose() {
     _countdownTimer?.cancel();
-    _disconnectSocket();
+    try {
+      final socketService = Get.find<SocketService>();
+      socketService.off('booking_request', _handleIncomingBookingRequest);
+    } catch (e) {
+      print('Error removing booking listener in onClose: $e');
+    }
     super.onClose();
   }
 
@@ -64,6 +71,35 @@ class HomeController extends GetxController {
     isLoading.value = false;
   }
 
+  Future<void> _checkActiveRide() async {
+    if (_checkedActiveRide) {
+      return;
+    }
+
+    _checkedActiveRide = true;
+
+    try {
+      final response = await _repository.checkActiveRide();
+      final booking = response.data;
+
+      if (!response.status || booking == null) {
+        return;
+      }
+
+      final status = booking.status?.toLowerCase();
+      if (status != 'accepted' && status != 'started') {
+        return;
+      }
+
+      _clearRequestState();
+      if (Get.currentRoute != RouteNames.ride) {
+        Get.offAllNamed(RouteNames.ride, arguments: booking);
+      }
+    } catch (e) {
+      print('Error checking active ride: $e');
+    }
+  }
+
   void toggleOnline() {
     isOnline.toggle();
     if (isOnline.value) {
@@ -74,6 +110,7 @@ class HomeController extends GetxController {
   }
 
   void logout() {
+    _disconnectSocket();
     Get.offAllNamed(RouteNames.login);
   }
 
@@ -114,6 +151,10 @@ class HomeController extends GetxController {
   }
 
   void _handleIncomingBookingRequest(dynamic data) {
+    if (Get.currentRoute == RouteNames.ride) {
+      return;
+    }
+
     final bookingMap = data['booking'];
     if (bookingMap != null && bookingMap is Map<String, dynamic>) {
       final booking = BookingDataModel.fromJson(bookingMap);
@@ -200,7 +241,6 @@ class HomeController extends GetxController {
         vehicleId,
       );
 
-    print(response);
       if (response.status && response.data != null) {
         // Success: Hide the request and navigate to the ride screen.
         _clearRequestState();

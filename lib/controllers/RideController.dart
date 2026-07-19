@@ -20,6 +20,14 @@ class RideController extends GetxController {
     super.onInit();
     if (Get.arguments is BookingDataModel) {
       booking.value = Get.arguments as BookingDataModel;
+      final status = booking.value?.status?.toLowerCase();
+      if (status == 'started') {
+        rideStatus.value = RideStatus.in_progress;
+      } else if (status == 'completed') {
+        rideStatus.value = RideStatus.completed;
+      } else {
+        rideStatus.value = RideStatus.awaiting_otp;
+      }
     }
   }
 

@@ -1,2 +1,4 @@
 adb connect 10.46.210.158:5555
 % adb shell ip addr   
+
+flutter emulators --launch Medium_Phone_API_36
