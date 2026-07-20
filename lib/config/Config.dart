@@ -1,13 +1,16 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppEnv {
   const AppEnv._();
 
-  static const String googleMapsApiKey =
-      String.fromEnvironment('GOOGLE_MAPS_API_KEY');
+  static String get googleMapsApiKey =>
+      dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
-  static const String googlePlacesApiKey =
-      String.fromEnvironment('GOOGLE_PLACES_API_KEY');
+  static String get googlePlacesApiKey =>
+      dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
 
-  static const String socketUrl = String.fromEnvironment('SOCKET_URL');
+  static String get socketUrl =>
+      dotenv.env['SOCKET_URL'] ?? const String.fromEnvironment('SOCKET_URL');
 
   static bool get hasGoogleMapsApiKey => _isRealValue(googleMapsApiKey);
 
@@ -23,3 +26,4 @@ class AppEnv {
     return !value.startsWith('YOUR_');
   }
 }
+

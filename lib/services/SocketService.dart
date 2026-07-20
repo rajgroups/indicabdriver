@@ -210,6 +210,9 @@ class SocketService extends GetxService with WidgetsBindingObserver {
       case 'booking_status':
         unawaited(_handleBookingEvent(eventType, data));
         break;
+      case 'location_updated':
+        // Acknowledged from server, handled silently
+        break;
       default:
         print('WebSocket: Received unknown event type: $eventType');
     }

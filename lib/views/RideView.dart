@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/controllers/RideController.dart';
 import 'package:indicab_driver/routes/names.dart';
+import 'package:indicab_driver/views/components/MapViewWidget.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class RideView extends GetView<RideController> {
   const RideView({super.key});
@@ -325,20 +327,21 @@ class RideView extends GetView<RideController> {
   }
 }
 
-class _DummyMap extends StatelessWidget {
+class _DummyMap extends GetView<RideController> {
   const _DummyMap();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFC5E1A5), // A light green color to represent a map
-      child: const Center(
-        child: Icon(
-          Icons.map_outlined,
-          size: 150,
-          color: Color(0x338D8D8D),
-        ),
-      ),
-    );
+    return Obx(() {
+      final initialTarget = controller.currentDriverPosition.value ?? const LatLng(12.9715987, 77.5945627);
+      return MapViewWidget(
+        pickupLocation: initialTarget,
+        markers: controller.markers,
+        polylines: controller.polylines,
+        onMapCreated: controller.onMapCreated,
+        compassEnabled: true,
+        myLocationButtonEnabled: false,
+      );
+    });
   }
 }

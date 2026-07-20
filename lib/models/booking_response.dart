@@ -37,6 +37,10 @@ class BookingDataModel {
     this.scheduledAt,
     this.pickupAddress,
     this.dropAddress,
+    this.pickupLatitude,
+    this.pickupLongitude,
+    this.dropLatitude,
+    this.dropLongitude,
     this.startOtp,
     this.estimatedAmount,
     this.finalAmount,
@@ -55,6 +59,10 @@ class BookingDataModel {
   final String? scheduledAt;
   final String? pickupAddress;
   final String? dropAddress;
+  final double? pickupLatitude;
+  final double? pickupLongitude;
+  final double? dropLatitude;
+  final double? dropLongitude;
   final String? startOtp;
   final double? estimatedAmount;
   final double? finalAmount;
@@ -75,6 +83,18 @@ class BookingDataModel {
       scheduledAt: json['scheduled_at']?.toString(),
       pickupAddress: json['pickup_address']?.toString(),
       dropAddress: json['drop_address']?.toString(),
+      pickupLatitude: json['pickup_latitude'] != null
+          ? double.tryParse(json['pickup_latitude'].toString())
+          : null,
+      pickupLongitude: json['pickup_longitude'] != null
+          ? double.tryParse(json['pickup_longitude'].toString())
+          : null,
+      dropLatitude: json['drop_latitude'] != null
+          ? double.tryParse(json['drop_latitude'].toString())
+          : null,
+      dropLongitude: json['drop_longitude'] != null
+          ? double.tryParse(json['drop_longitude'].toString())
+          : null,
       startOtp: json['start_otp']?.toString(),
       estimatedAmount: json['estimated_amount'] != null
           ? double.tryParse(json['estimated_amount'].toString())

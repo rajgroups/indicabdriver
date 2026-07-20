@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:indicab_driver/repositories/HomeRepository.dart';
 import 'package:indicab_driver/repository/BookingRepository.dart';
 import 'package:indicab_driver/routes/names.dart';
@@ -10,6 +12,10 @@ import 'package:indicab_driver/services/StorageService.dart';
 import 'package:indicab_driver/constants/Keys.dart';
 import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/models/booking_response.dart';
+import 'package:indicab_driver/utils/Permissions.dart';
+import 'package:indicab_driver/utils/maps/LocationHelper.dart';
+import 'package:indicab_driver/utils/maps/MarkerHelper.dart';
+import 'package:indicab_driver/utils/maps/CameraHelper.dart';
 
 class HomeController extends GetxController {
   HomeController({
@@ -39,10 +45,18 @@ class HomeController extends GetxController {
   static const String _driverIdKey = 'driverId';
   bool _checkedActiveRide = false;
 
+  // Map variables
+  GoogleMapController? mapController;
+  final Rxn<LatLng> currentPosition = Rxn<LatLng>();
+  final Rxn<double> heading = Rxn<double>();
+  final RxSet<Marker> markers = <Marker>{}.obs;
+  StreamSubscription<Position>? _locationSubscription;
+
   @override
   void onInit() {
     super.onInit();
     loadDashboard();
+    _requestPermissionAndTrack();
     if (isOnline.value) {
       _connectSocket();
     }
@@ -51,6 +65,7 @@ class HomeController extends GetxController {
 
   @override
   void onClose() {
+    _stopTracking();
     _countdownTimer?.cancel();
     try {
       final socketService = Get.find<SocketService>();
@@ -59,6 +74,97 @@ class HomeController extends GetxController {
       print('Error removing booking listener in onClose: $e');
     }
     super.onClose();
+  }
+
+  Future<void> _requestPermissionAndTrack() async {
+    final granted = await PermissionHelper.requestLocation();
+    if (granted && isOnline.value) {
+      _startTracking();
+    }
+  }
+
+  void _startTracking() {
+    _locationSubscription?.cancel();
+    _locationSubscription = LocationHelper.getLocationStream().listen((position) {
+      final latLng = LatLng(position.latitude, position.longitude);
+      currentPosition.value = latLng;
+      heading.value = position.heading;
+
+      _sendLocationUpdateToSocket(position);
+      _updateDriverMarker(latLng, position.heading);
+
+      if (mapController != null) {
+        CameraHelper.animateToPosition(mapController, latLng, bearing: position.heading);
+      }
+    }, onError: (e) {
+      print("HomeController location stream error: $e");
+    });
+  }
+
+  void _stopTracking() {
+    _locationSubscription?.cancel();
+    _locationSubscription = null;
+  }
+
+  Future<void> _updateDriverMarker(LatLng position, double bearing) async {
+    final carIcon = await MarkerHelper.getCarIcon();
+    markers.assignAll({
+      Marker(
+        markerId: const MarkerId('driver'),
+        position: position,
+        rotation: bearing,
+        icon: carIcon,
+        anchor: const Offset(0.5, 0.5),
+        flat: true,
+      )
+    });
+  }
+
+  void _sendLocationUpdateToSocket(Position position) {
+    try {
+      final socketService = Get.find<SocketService>();
+      if (!socketService.isConnected.value) return;
+
+      final driverIdValue = StorageService().read(_driverIdKey);
+      final String? driverId = driverIdValue?.toString();
+      if (driverId == null) return;
+
+      final locationData = {
+        "type": "driver_location",
+        "driver_id": int.tryParse(driverId) ?? 0,
+        "latitude": position.latitude,
+        "longitude": position.longitude,
+      };
+      socketService.send(locationData);
+    } catch (e) {
+      print("Error sending location update to socket: $e");
+    }
+  }
+
+  void onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+    if (currentPosition.value != null) {
+      CameraHelper.animateToPosition(
+        mapController,
+        currentPosition.value!,
+        bearing: heading.value,
+      );
+      _updateDriverMarker(currentPosition.value!, heading.value ?? 0);
+    } else {
+      LocationHelper.getCurrentLocation().then((position) {
+        if (position != null) {
+          final latLng = LatLng(position.latitude, position.longitude);
+          currentPosition.value = latLng;
+          heading.value = position.heading;
+          CameraHelper.animateToPosition(
+            mapController,
+            latLng,
+            bearing: position.heading,
+          );
+          _updateDriverMarker(latLng, position.heading);
+        }
+      });
+    }
   }
 
   Future<void> loadDashboard() async {
@@ -104,8 +210,10 @@ class HomeController extends GetxController {
     isOnline.toggle();
     if (isOnline.value) {
       _connectSocket();
+      _startTracking();
     } else {
       _disconnectSocket();
+      _stopTracking();
     }
   }
 
@@ -282,6 +390,10 @@ class HomeController extends GetxController {
       vehicleCategoryId: 1,
       pickupAddress: 'MG Road Metro Station',
       dropAddress: 'Indiranagar 12th Main Road',
+      pickupLatitude: 12.9754,
+      pickupLongitude: 77.6061,
+      dropLatitude: 12.9718,
+      dropLongitude: 77.6412,
       estimatedAmount: 185.00,
       driverName: 'John Wick',
       vehicleNumber: 'KA-03-MY-8888',

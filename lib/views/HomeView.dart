@@ -5,6 +5,7 @@ import 'package:indicab_driver/constants/Strings.dart';
 import 'package:indicab_driver/controllers/HomeController.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/models/booking_response.dart';
+import 'package:indicab_driver/views/components/MapViewWidget.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
@@ -94,21 +95,20 @@ class HomeView extends GetView<HomeController> {
   }
 }
 
-class _DummyMap extends StatelessWidget {
+class _DummyMap extends GetView<HomeController> {
   const _DummyMap();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFC5E1A5), // A light green color to represent a map
-      child: const Center(
-        child: Icon(
-          Icons.map_outlined,
-          size: 150,
-          color: Color(0x338D8D8D),
-        ),
-      ),
-    );
+    return Obx(() {
+      return MapViewWidget(
+        pickupLocation: controller.currentPosition.value,
+        markers: controller.markers,
+        onMapCreated: controller.onMapCreated,
+        compassEnabled: true,
+        myLocationButtonEnabled: false,
+      );
+    });
   }
 }
 

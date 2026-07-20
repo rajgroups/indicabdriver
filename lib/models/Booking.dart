@@ -9,6 +9,10 @@ class Booking {
   final double? estimatedAmount;
   final String? pickupAddress;
   final String? dropAddress;
+  final double? pickupLatitude;
+  final double? pickupLongitude;
+  final double? dropLatitude;
+  final double? dropLongitude;
 
   Booking({
     this.id,
@@ -21,6 +25,10 @@ class Booking {
     this.estimatedAmount,
     this.pickupAddress,
     this.dropAddress,
+    this.pickupLatitude,
+    this.pickupLongitude,
+    this.dropLatitude,
+    this.dropLongitude,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
@@ -35,6 +43,18 @@ class Booking {
       estimatedAmount: (json['estimated_amount'] as num?)?.toDouble(),
       pickupAddress: json['pickup_address'],
       dropAddress: json['drop_address'],
+      pickupLatitude: json['pickup_latitude'] != null
+          ? double.tryParse(json['pickup_latitude'].toString())
+          : null,
+      pickupLongitude: json['pickup_longitude'] != null
+          ? double.tryParse(json['pickup_longitude'].toString())
+          : null,
+      dropLatitude: json['drop_latitude'] != null
+          ? double.tryParse(json['drop_latitude'].toString())
+          : null,
+      dropLongitude: json['drop_longitude'] != null
+          ? double.tryParse(json['drop_longitude'].toString())
+          : null,
       driverName: driver is Map ? driver['name'] : json['driver_name'],
       vehicleName: vehicle is Map ? vehicle['name'] : json['vehicle_name'],
       vehicleNumber:
@@ -54,6 +74,12 @@ class Booking {
       vehicleName: dataModel.vehicleName,
       vehicleNumber: dataModel.vehicleNumber,
       estimatedAmount: (dataModel.estimatedAmount as num?)?.toDouble(),
+      pickupAddress: dataModel.pickupAddress,
+      dropAddress: dataModel.dropAddress,
+      pickupLatitude: dataModel.pickupLatitude,
+      pickupLongitude: dataModel.pickupLongitude,
+      dropLatitude: dataModel.dropLatitude,
+      dropLongitude: dataModel.dropLongitude,
     );
   }
 
@@ -66,5 +92,11 @@ class Booking {
         'vehicle_name': vehicleName,
         'vehicle_number': vehicleNumber,
         'estimated_amount': estimatedAmount,
+        'pickup_address': pickupAddress,
+        'drop_address': dropAddress,
+        'pickup_latitude': pickupLatitude,
+        'pickup_longitude': pickupLongitude,
+        'drop_latitude': dropLatitude,
+        'drop_longitude': dropLongitude,
       };
 }
