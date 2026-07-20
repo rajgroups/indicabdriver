@@ -5,6 +5,18 @@ import 'package:indicab_driver/models/booking_response.dart';
 class RideRepository {
   final ApiClient _apiClient = ApiClient();
 
+  Future<BookingResponseModel> arrivedAtPickup(int bookingId) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.arrivedBooking(bookingId),
+    );
+
+    final payload = response.data;
+    if (payload is Map<String, dynamic>) {
+      return BookingResponseModel.fromJson(payload);
+    }
+    throw Exception('Unexpected response format.');
+  }
+
   Future<BookingResponseModel> startRide(int bookingId, String otp) async {
     final response = await _apiClient.post(
       ApiEndpoints.startBooking(bookingId),

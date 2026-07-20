@@ -47,6 +47,12 @@ class BookingDataModel {
     this.driverName,
     this.vehicleNumber,
     this.vehicleName,
+    this.passengerName,
+    this.passengerPhone,
+    this.categoryName,
+    this.requiresDropLocation,
+    this.durationHours,
+    this.notes,
   });
 
   final int? id;
@@ -69,6 +75,20 @@ class BookingDataModel {
   final String? driverName;
   final String? vehicleNumber;
   final String? vehicleName;
+  final String? passengerName;
+  final String? passengerPhone;
+  final String? categoryName;
+  final bool? requiresDropLocation;
+  final double? durationHours;
+  final String? notes;
+
+  /// Whether this booking has a valid drop location (Transport Mode).
+  /// If false, this is a Work Mode booking (e.g., tractor, JCB, crane).
+  bool get hasDropLocation =>
+      dropLatitude != null && dropLongitude != null;
+
+  /// Whether this is a work-based booking (no destination).
+  bool get isWorkMode => !hasDropLocation;
 
   factory BookingDataModel.fromJson(Map<String, dynamic> json) {
     return BookingDataModel(
@@ -85,16 +105,16 @@ class BookingDataModel {
       dropAddress: json['drop_address']?.toString(),
       pickupLatitude: json['pickup_latitude'] != null
           ? double.tryParse(json['pickup_latitude'].toString())
-          : null,
+          : _extractLocationCoord(json, 'pickup_location', 'latitude'),
       pickupLongitude: json['pickup_longitude'] != null
           ? double.tryParse(json['pickup_longitude'].toString())
-          : null,
+          : _extractLocationCoord(json, 'pickup_location', 'longitude'),
       dropLatitude: json['drop_latitude'] != null
           ? double.tryParse(json['drop_latitude'].toString())
-          : null,
+          : _extractLocationCoord(json, 'drop_location', 'latitude'),
       dropLongitude: json['drop_longitude'] != null
           ? double.tryParse(json['drop_longitude'].toString())
-          : null,
+          : _extractLocationCoord(json, 'drop_location', 'longitude'),
       startOtp: json['start_otp']?.toString(),
       estimatedAmount: json['estimated_amount'] != null
           ? double.tryParse(json['estimated_amount'].toString())
@@ -114,7 +134,35 @@ class BookingDataModel {
               json['vehicle']['model']?.toString(),
             ])
           : null,
+      passengerName: json['user'] is Map<String, dynamic>
+          ? (json['user']['name']?.toString())
+          : (json['passenger_name']?.toString()),
+      passengerPhone: json['user'] is Map<String, dynamic>
+          ? (json['user']['phone']?.toString())
+          : (json['passenger_phone']?.toString()),
+      categoryName: json['category_name']?.toString() ??
+          (json['category'] is Map<String, dynamic>
+              ? json['category']['name']?.toString()
+              : null),
+      requiresDropLocation: json['requires_drop_location'] as bool?,
+      durationHours: json['duration_hours'] != null
+          ? double.tryParse(json['duration_hours'].toString())
+          : null,
+      notes: json['notes']?.toString(),
     );
+  }
+
+  /// Extracts latitude or longitude from a nested location object.
+  static double? _extractLocationCoord(
+      Map<String, dynamic> json, String locationKey, String coordKey) {
+    final location = json[locationKey];
+    if (location is Map<String, dynamic>) {
+      final value = location[coordKey];
+      if (value != null) {
+        return double.tryParse(value.toString());
+      }
+    }
+    return null;
   }
 
   static String? _joinParts(List<String?> parts) {

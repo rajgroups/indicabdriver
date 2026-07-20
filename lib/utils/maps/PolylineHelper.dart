@@ -3,41 +3,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:indicab_driver/config/Config.dart';
+import 'package:indicab_driver/models/RouteDetails.dart';
 
 class PolylineHelper {
+  /// Returns route points only (backward compatible).
   static Future<List<LatLng>> getRoutePoints(LatLng origin, LatLng destination) async {
+    final details = await getRouteWithDetails(origin, destination);
+    return details.points;
+  }
+
+  /// Returns full route details including distance, duration, and polyline points.
+  static Future<RouteDetails> getRouteWithDetails(LatLng origin, LatLng destination) async {
     final apiKey = AppEnv.googlePlacesApiKey.isNotEmpty
         ? AppEnv.googlePlacesApiKey
         : AppEnv.googleMapsApiKey;
 
     if (apiKey.isEmpty || apiKey.startsWith('YOUR_')) {
       print("PolylineHelper: Missing API key, returning straight line.");
-      return [origin, destination];
-    }
-
-    // Try using flutter_polyline_points first
-    try {
-      final polylinePoints = PolylinePoints(apiKey: apiKey);
-      
-      // Attempt using the package
-      final result = await polylinePoints.getRouteBetweenCoordinates(
-        request: PolylineRequest(
-          origin: PointLatLng(origin.latitude, origin.longitude),
-          destination: PointLatLng(destination.latitude, destination.longitude),
-          mode: TravelMode.driving,
-        ),
+      return RouteDetails(
+        points: [origin, destination],
+        distanceText: '',
+        durationText: '',
+        distanceMeters: 0,
+        durationSeconds: 0,
       );
-
-      if (result.points.isNotEmpty) {
-        return result.points.map((p) => LatLng(p.latitude, p.longitude)).toList();
-      } else {
-        print("PolylineHelper: Package returned empty points, message: ${result.errorMessage}");
-      }
-    } catch (e) {
-      print("PolylineHelper: Package call failed, trying direct HTTP request: $e");
     }
 
-    // Fallback: Direct API request via Dio
+    // Try direct Directions API call via Dio (gives us distance/duration)
     try {
       final dio = Dio();
       final url = "https://maps.googleapis.com/maps/api/directions/json"
@@ -52,18 +44,74 @@ class PolylineHelper {
         if (data['status'] == 'OK' &&
             data['routes'] != null &&
             (data['routes'] as List).isNotEmpty) {
-          final pointsStr = data['routes'][0]['overview_polyline']['points'] as String;
-          return _decodePoly(pointsStr);
+          final route = data['routes'][0];
+          final pointsStr = route['overview_polyline']['points'] as String;
+          final points = _decodePoly(pointsStr);
+
+          // Extract distance and duration from the first leg
+          String distanceText = '';
+          String durationText = '';
+          int distanceMeters = 0;
+          int durationSeconds = 0;
+
+          if (route['legs'] != null && (route['legs'] as List).isNotEmpty) {
+            final leg = route['legs'][0];
+            distanceText = leg['distance']?['text'] ?? '';
+            durationText = leg['duration']?['text'] ?? '';
+            distanceMeters = leg['distance']?['value'] ?? 0;
+            durationSeconds = leg['duration']?['value'] ?? 0;
+          }
+
+          return RouteDetails(
+            points: points,
+            distanceText: distanceText,
+            durationText: durationText,
+            distanceMeters: distanceMeters,
+            durationSeconds: durationSeconds,
+          );
         } else {
           print("PolylineHelper: API status not OK: ${data['status']}");
         }
       }
     } catch (e) {
-      print("PolylineHelper: Direct HTTP fallback failed: $e");
+      print("PolylineHelper: Direct HTTP request failed: $e");
+    }
+
+    // Fallback: flutter_polyline_points (no distance/duration info)
+    try {
+      final polylinePoints = PolylinePoints(apiKey: apiKey);
+
+      final result = await polylinePoints.getRouteBetweenCoordinates(
+        request: PolylineRequest(
+          origin: PointLatLng(origin.latitude, origin.longitude),
+          destination: PointLatLng(destination.latitude, destination.longitude),
+          mode: TravelMode.driving,
+        ),
+      );
+
+      if (result.points.isNotEmpty) {
+        return RouteDetails(
+          points: result.points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
+          distanceText: '',
+          durationText: '',
+          distanceMeters: 0,
+          durationSeconds: 0,
+        );
+      } else {
+        print("PolylineHelper: Package returned empty points, message: ${result.errorMessage}");
+      }
+    } catch (e) {
+      print("PolylineHelper: Package call failed: $e");
     }
 
     // Ultimate fallback: straight line
-    return [origin, destination];
+    return RouteDetails(
+      points: [origin, destination],
+      distanceText: '',
+      durationText: '',
+      distanceMeters: 0,
+      durationSeconds: 0,
+    );
   }
 
   // Decodes Google overview_polyline string to LatLng list
