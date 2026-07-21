@@ -34,14 +34,9 @@ class DriverMarkerService {
       final double lat = start.latitude + (end.latitude - start.latitude) * t;
       final double lng = start.longitude + (end.longitude - start.longitude) * t;
 
-      // Shortest path interpolation for heading (angle)
-      double diff = endHeading - startHeading;
-      while (diff < -180) {
-        diff += 360;
-      }
-      while (diff > 180) {
-        diff -= 360;
-      }
+      // Shortest path interpolation for heading (angle) using safe, loop-free modulo arithmetic.
+      // This prevents infinite loops if inputs are invalid or infinite.
+      double diff = (endHeading - startHeading + 180) % 360 - 180;
       final double heading = (startHeading + diff * t) % 360;
 
       _interpolatedPosition = LatLng(lat, lng);

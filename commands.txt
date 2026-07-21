@@ -1,4 +1,8 @@
 adb connect 10.46.210.158:5555
 % adb shell ip addr   
 
+adb devices
+adb tcpip 5555
+adb shell ip addr show wlan2
+
 flutter emulators --launch Medium_Phone_API_36
