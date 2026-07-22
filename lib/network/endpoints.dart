@@ -12,4 +12,9 @@ class ApiEndpoints {
   static String arrivedBooking(int bookingId) => '/bookings/$bookingId/arrived';
   static String startBooking(int bookingId) => '/bookings/$bookingId/start';
   static String completeBooking(int bookingId) => '/bookings/$bookingId/complete';
+  static const dashboard = '/dashboard';
+  static const onlineStatus = '/profile/online-status';
+  static String bookingFare(dynamic id) => '/bookings/$id/fare';
 }
+
+

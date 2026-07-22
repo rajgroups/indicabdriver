@@ -8,6 +8,9 @@ import 'package:indicab_driver/views/LoginView.dart';
 import 'package:indicab_driver/views/RideView.dart';
 import 'package:indicab_driver/views/SplashView.dart';
 
+import 'package:indicab_driver/views/RideHistory.dart';
+import 'package:indicab_driver/views/RideDetails.dart';
+
 class AppPages {
   static const initialRoute = RouteNames.splash;
 
@@ -28,5 +31,14 @@ class AppPages {
       page: () => const RideView(),
       binding: RideBinding(),
     ),
+    GetPage(
+      name: RouteNames.rideHistory,
+      page: () => const RideHistoryScreen(),
+    ),
+    GetPage(
+      name: RouteNames.rideDetails,
+      page: () => const RideDetailsScreen(),
+    ),
   ];
 }
+

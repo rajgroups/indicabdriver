@@ -48,20 +48,23 @@ class HomeView extends GetView<HomeController> {
                           isOnline: controller.isOnline.value,
                           onToggle: controller.toggleOnline,
                         ),
-                        const SizedBox(height: 16),
                         _EarningsCard(
-                          earnings: 12,
+                          earnings: controller.todayEarnings.value,
                           trips: controller.todayTrips.value,
                           rating: controller.rating.value,
                         ),
                         const SizedBox(height: 16),
                         _QuickActions(
-                          onSupport: () => Get.toNamed(RouteNames.ride),
-                          onHistory: () => Get.snackbar('History', 'Loading trip history...', backgroundColor: Colors.white),
-                          onEarnings: () => Get.snackbar('Earnings', 'Loading earnings details...', backgroundColor: Colors.white),
+                          onSupport: () => Get.snackbar('Support', 'Contacting Indicab Support...', backgroundColor: Colors.white),
+                          onHistory: () => Get.toNamed(RouteNames.rideHistory),
+                          onEarnings: () => Get.toNamed(RouteNames.rideHistory),
                         ),
                         const SizedBox(height: 16),
-                        _RecentTrips(),
+                        _RecentTrips(
+                          trips: controller.recentTrips,
+                          onSeeAll: () => Get.toNamed(RouteNames.rideHistory),
+                        ),
+
                       ],
                     ),
                   ),
@@ -542,7 +545,13 @@ class _ActionButton extends StatelessWidget {
 }
 
 class _RecentTrips extends StatelessWidget {
-  const _RecentTrips();
+  const _RecentTrips({
+    required this.trips,
+    required this.onSeeAll,
+  });
+
+  final List<BookingDataModel> trips;
+  final VoidCallback onSeeAll;
 
   @override
   Widget build(BuildContext context) {
@@ -574,7 +583,7 @@ class _RecentTrips extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: onSeeAll,
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: Size.zero,
@@ -592,26 +601,32 @@ class _RecentTrips extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _TripItem(
-            from: 'MG Road',
-            to: 'Indiranagar',
-            amount: '₹185',
-            time: '2:30 PM',
-          ),
-          const Divider(height: 16),
-          _TripItem(
-            from: 'Koramangala',
-            to: 'Electronic City',
-            amount: '₹320',
-            time: '1:15 PM',
-          ),
-          const Divider(height: 16),
-          _TripItem(
-            from: 'HSR Layout',
-            to: 'Whitefield',
-            amount: '₹450',
-            time: '11:45 AM',
-          ),
+          if (trips.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  'No recent trips yet',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: trips.length,
+              separatorBuilder: (context, index) => const Divider(height: 16),
+              itemBuilder: (context, index) {
+                final booking = trips[index];
+                return _TripItem(
+                  booking: booking,
+                  onTap: () {
+                    Get.toNamed(RouteNames.rideDetails, arguments: booking);
+                  },
+                );
+              },
+            ),
         ],
       ),
     );
@@ -620,71 +635,81 @@ class _RecentTrips extends StatelessWidget {
 
 class _TripItem extends StatelessWidget {
   const _TripItem({
-    required this.from,
-    required this.to,
-    required this.amount,
-    required this.time,
+    required this.booking,
+    required this.onTap,
   });
 
-  final String from;
-  final String to;
-  final String amount;
-  final String time;
+  final BookingDataModel booking;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(10),
+    final pickup = booking.pickupAddress ?? 'Pickup Address';
+    final drop = booking.dropAddress ?? 'Drop Address';
+    final amount = booking.finalAmount != null && booking.finalAmount! > 0
+        ? '₹${booking.finalAmount!.toStringAsFixed(0)}'
+        : (booking.estimatedAmount != null ? '₹${booking.estimatedAmount!.toStringAsFixed(0)}' : '₹0');
+    final time = booking.scheduledAt ?? 'Recent';
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.route_rounded,
+              color: AppColors.primaryDark,
+              size: 20,
+            ),
           ),
-          child: const Icon(
-            Icons.route_rounded,
-            color: AppColors.primaryDark,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$from → $to',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$pickup → $drop',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                time,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
+                const SizedBox(height: 2),
+                Text(
+                  time,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        Text(
-          amount,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+          const SizedBox(width: 8),
+          Text(
+            amount,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
+
 
 class _IncomingRideCard extends StatelessWidget {
   const _IncomingRideCard({

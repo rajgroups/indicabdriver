@@ -3,4 +3,10 @@ class RouteNames {
   static const home = '/home';
   static const login = '/login';
   static const ride = '/ride';
+  static const rideHistory = '/ride-history';
+  static const rideDetails = '/ride-details';
+  static const activeRide = '/active-ride';
+  static const findingDriver = '/finding-driver';
 }
+
+

@@ -29,10 +29,13 @@ class HomeController extends GetxController {
 
   final RxBool isOnline = true.obs;
   final RxBool isLoading = true.obs;
+  final RxBool isTogglingOnline = false.obs;
   final RxInt onlineTrips = 0.obs;
   final RxInt todayTrips = 0.obs;
-  final RxDouble rating = 0.0.obs;
-  final RxInt earnings = 0.obs;
+  final RxDouble rating = 4.9.obs;
+  final RxDouble todayEarnings = 0.0.obs;
+  final RxList<BookingDataModel> recentTrips = <BookingDataModel>[].obs;
+
 
   // Incoming Booking request states
   final RxBool showIncomingRequest = false.obs;
@@ -169,12 +172,22 @@ class HomeController extends GetxController {
 
   Future<void> loadDashboard() async {
     isLoading.value = true;
-    final data = await _repository.loadDashboard();
-    onlineTrips.value = data['onlineTrips'] as int;
-    todayTrips.value = data['todayTrips'] as int;
-    rating.value = (data['rating'] as num).toDouble();
-    earnings.value = data['earnings'] as int;
-    isLoading.value = false;
+    try {
+      final data = await _repository.loadDashboard();
+      isOnline.value = data['is_online'] as bool? ?? false;
+      todayTrips.value = data['todayTrips'] as int? ?? 0;
+      rating.value = (data['rating'] as num? ?? 4.9).toDouble();
+      todayEarnings.value = (data['earnings'] as num? ?? 0.0).toDouble();
+
+      final recent = data['recentBookings'];
+      if (recent is List<BookingDataModel>) {
+        recentTrips.assignAll(recent);
+      }
+    } catch (e) {
+      debugPrint('Error loading dashboard: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   Future<void> _checkActiveRide() async {
@@ -193,7 +206,7 @@ class HomeController extends GetxController {
       }
 
       final status = booking.status?.toLowerCase();
-      if (status != 'accepted' && status != 'started') {
+      if (status != 'accepted' && status != 'arrived' && status != 'started') {
         return;
       }
 
@@ -202,20 +215,54 @@ class HomeController extends GetxController {
         Get.offAllNamed(RouteNames.ride, arguments: booking);
       }
     } catch (e) {
-      print('Error checking active ride: $e');
+      debugPrint('Error checking active ride: $e');
     }
   }
 
-  void toggleOnline() {
-    isOnline.toggle();
-    if (isOnline.value) {
-      _connectSocket();
-      _startTracking();
-    } else {
-      _disconnectSocket();
-      _stopTracking();
+  Future<void> toggleOnline() async {
+    if (isTogglingOnline.value) return;
+
+    final targetStatus = !isOnline.value;
+    isTogglingOnline.value = true;
+
+    try {
+      final updatedStatus = await _repository.toggleOnlineStatus(targetStatus);
+      isOnline.value = updatedStatus;
+
+      if (isOnline.value) {
+        _connectSocket();
+        _startTracking();
+        Get.snackbar(
+          'Online',
+          'You are now online and receiving ride requests.',
+          backgroundColor: Colors.white,
+          colorText: AppColors.textPrimary,
+        );
+      } else {
+        _disconnectSocket();
+        _stopTracking();
+        Get.snackbar(
+          'Offline',
+          'You are now offline.',
+          backgroundColor: Colors.white,
+          colorText: AppColors.textPrimary,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error toggling online status: $e');
+      final msg = e.toString().replaceAll('Exception: ', '');
+      Get.snackbar(
+        'Action Denied',
+        msg,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+    } finally {
+      isTogglingOnline.value = false;
     }
   }
+
 
   void logout() {
     _disconnectSocket();
