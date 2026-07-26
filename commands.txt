@@ -1,4 +1,4 @@
-adb connect 10.46.210.158:5555
+adb connect 10.80.57.2:5555
 % adb shell ip addr   
 
 adb devices
