@@ -6,6 +6,7 @@ import 'package:indicab_driver/constants/Keys.dart';
 import 'package:indicab_driver/network/client.dart';
 import 'package:indicab_driver/repositories/AuthRepository.dart';
 import 'package:indicab_driver/routes/names.dart';
+import 'package:indicab_driver/services/FirebaseService.dart';
 import 'package:indicab_driver/services/SecureStorageService.dart';
 import 'package:indicab_driver/services/SocketService.dart';
 import 'package:indicab_driver/services/StorageService.dart';
@@ -23,6 +24,7 @@ class AuthController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool otpSent = false.obs;
   final RxString errorMessage = ''.obs;
+  static const String _driverIdKey = 'driverId';
 
   @override
   void onInit() {
@@ -33,11 +35,23 @@ class AuthController extends GetxController {
   Future<void> _checkLoginStatus() async {
     final secureStorage = SecureStorageService();
     final token = await secureStorage.read(StorageKeys.token);
-    if (token != null && token.isNotEmpty) {
+    final driverId = await _readDriverId();
+
+    if (token != null && token.isNotEmpty && driverId != null) {
       ApiClient().setTokens(token);
-      _sendLocationUpdate();
+      if (Get.isRegistered<SocketService>()) {
+        Get.find<SocketService>().setToken(token);
+      }
+      await _sendLocationUpdate();
       Get.offAllNamed(RouteNames.home);
+      return;
     }
+
+    if (token != null || driverId != null) {
+      await _clearStoredSession();
+    }
+
+    await _navigateToLoginIfNeeded();
   }
 
   @override
@@ -78,13 +92,27 @@ class AuthController extends GetxController {
     errorMessage.value = '';
 
     try {
+      String? fcmToken;
+      if (Get.isRegistered<FirebaseService>()) {
+        final firebaseService = Get.find<FirebaseService>();
+        fcmToken = firebaseService.fcmToken.value;
+        if (fcmToken.isEmpty) {
+          fcmToken = await firebaseService.fetchFcmToken();
+        }
+      }
+
       final success = await _repository.verifyOtp(
         mobileController.text,
         otpController.text,
+        fcmToken: fcmToken,
       );
 
       if (success) {
-        _sendLocationUpdate();
+        final secureToken = await SecureStorageService().read(StorageKeys.token);
+        if (secureToken != null && secureToken.isNotEmpty && Get.isRegistered<SocketService>()) {
+          Get.find<SocketService>().setToken(secureToken);
+        }
+        await _sendLocationUpdate();
         Get.offAllNamed(RouteNames.home);
       } else {
         errorMessage.value = 'Invalid OTP. Please try again.';
@@ -96,18 +124,16 @@ class AuthController extends GetxController {
     }
   }
 
-  static const String _driverIdKey = 'driverId';
-
   Future<void> _sendLocationUpdate() async {
     try {
       final socketService = Get.find<SocketService>();
-      final storage = StorageService();
       final secureStorage = SecureStorageService();
       final token = await secureStorage.read(StorageKeys.token);
-      final dynamic driverIdValue = storage.read(_driverIdKey);
+      final driverIdValue = await _readDriverId();
 
-      if (token == null || driverIdValue == null) {
+      if (token == null || token.isEmpty || driverIdValue == null) {
         print("Token or Driver ID is missing. Cannot send location.");
+        await _redirectToLoginAndClearSession();
         return;
       }
 
@@ -152,22 +178,69 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     isLoading.value = true;
     try {
-      // 1. Revoke tokens in ApiClient
+      await _clearStoredSession();
+      _disconnectSocketIfAvailable();
       ApiClient().revokeTokens();
-
-      // 2. Clear credentials from SecureStorage and StorageService
-      final secureStorage = SecureStorageService();
-      final storage = StorageService();
-      await secureStorage.delete(StorageKeys.token);
-      storage.delete(StorageKeys.token);
-
-      // 3. Navigate to login screen
       Get.offAllNamed(RouteNames.login);
     } catch (e) {
-      // In case of error, still attempt to navigate to login
+      await _clearStoredSession();
+      _disconnectSocketIfAvailable();
       Get.offAllNamed(RouteNames.login);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<int?> _readDriverId() async {
+    final storage = StorageService();
+    final secureStorage = SecureStorageService();
+
+    final dynamic storedDriverId = storage.read(_driverIdKey);
+    if (storedDriverId != null) {
+      return int.tryParse(storedDriverId.toString());
+    }
+
+    final secureDriverId = await secureStorage.read(_driverIdKey);
+    if (secureDriverId != null && secureDriverId.isNotEmpty) {
+      return int.tryParse(secureDriverId);
+    }
+
+    return null;
+  }
+
+  Future<void> _clearStoredSession() async {
+    final secureStorage = SecureStorageService();
+    final storage = StorageService();
+    await secureStorage.delete(StorageKeys.token);
+    await secureStorage.delete(_driverIdKey);
+    storage.delete(StorageKeys.token);
+    storage.delete(_driverIdKey);
+  }
+
+  void _disconnectSocketIfAvailable() {
+    if (!Get.isRegistered<SocketService>()) {
+      return;
+    }
+
+    try {
+      Get.find<SocketService>().disconnect();
+    } catch (e) {
+      print('Error disconnecting socket during auth cleanup: $e');
+    }
+  }
+
+  Future<void> _redirectToLoginAndClearSession() async {
+    await _clearStoredSession();
+    _disconnectSocketIfAvailable();
+    ApiClient().revokeTokens();
+    await _navigateToLoginIfNeeded();
+  }
+
+  Future<void> _navigateToLoginIfNeeded() async {
+    if (Get.currentRoute == RouteNames.login) {
+      return;
+    }
+
+    Get.offAllNamed(RouteNames.login);
   }
 }

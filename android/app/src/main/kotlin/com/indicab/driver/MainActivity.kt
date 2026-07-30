@@ -1,4 +1,4 @@
-package com.indicab.indicab_driver
+package com.indicab.driver
 
 import io.flutter.embedding.android.FlutterActivity
 

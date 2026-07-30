@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:indicab_driver/routes/routes.dart';
+import 'package:indicab_driver/services/FirebaseService.dart';
 import 'package:indicab_driver/services/SocketService.dart';
 
 Future<void> main() async {
@@ -11,6 +12,7 @@ Future<void> main() async {
   } catch (e) {
     print("Error loading .env file: $e");
   }
+  await Get.putAsync(() => FirebaseService().init(), permanent: true);
   Get.put(SocketService(), permanent: true);
   runApp(const MyApp());
 }

@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:indicab_driver/network/client.dart';
 import 'package:indicab_driver/repositories/HomeRepository.dart';
 import 'package:indicab_driver/repository/BookingRepository.dart';
 import 'package:indicab_driver/routes/names.dart';
+import 'package:indicab_driver/services/FirebaseService.dart';
 import 'package:indicab_driver/services/SocketService.dart';
 import 'package:indicab_driver/services/SecureStorageService.dart';
 import 'package:indicab_driver/services/StorageService.dart';
@@ -45,6 +47,7 @@ class HomeController extends GetxController {
   final RxBool isAccepting = false.obs;
 
   Timer? _countdownTimer;
+  Worker? _pendingIncomingBookingWorker;
   static const String _driverIdKey = 'driverId';
   bool _checkedActiveRide = false;
 
@@ -58,11 +61,13 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _bindPendingIncomingBooking();
     loadDashboard();
     _requestPermissionAndTrack();
     if (isOnline.value) {
       _connectSocket();
     }
+    Future.microtask(_consumePendingIncomingBooking);
     Future.microtask(_checkActiveRide);
   }
 
@@ -70,6 +75,7 @@ class HomeController extends GetxController {
   void onClose() {
     _stopTracking();
     _countdownTimer?.cancel();
+    _pendingIncomingBookingWorker?.dispose();
     try {
       final socketService = Get.find<SocketService>();
       socketService.off('booking_request', _handleIncomingBookingRequest);
@@ -219,6 +225,48 @@ class HomeController extends GetxController {
     }
   }
 
+  void _bindPendingIncomingBooking() {
+    if (!Get.isRegistered<FirebaseService>()) {
+      return;
+    }
+
+    final firebaseService = Get.find<FirebaseService>();
+    _pendingIncomingBookingWorker = ever<BookingDataModel?>(
+      firebaseService.pendingIncomingBooking,
+      (booking) {
+        if (booking == null) {
+          return;
+        }
+
+        if (Get.currentRoute == RouteNames.ride) {
+          firebaseService.clearPendingIncomingBooking();
+          return;
+        }
+
+        showIncomingBookingRequest(booking);
+        firebaseService.clearPendingIncomingBooking();
+      },
+    );
+  }
+
+  Future<void> _consumePendingIncomingBooking() async {
+    if (!Get.isRegistered<FirebaseService>()) {
+      return;
+    }
+
+    final firebaseService = Get.find<FirebaseService>();
+    final booking = firebaseService.takePendingIncomingBooking();
+    if (booking == null) {
+      return;
+    }
+
+    if (Get.currentRoute == RouteNames.ride) {
+      return;
+    }
+
+    showIncomingBookingRequest(booking);
+  }
+
   Future<void> toggleOnline() async {
     if (isTogglingOnline.value) return;
 
@@ -264,8 +312,10 @@ class HomeController extends GetxController {
   }
 
 
-  void logout() {
+  Future<void> logout() async {
     _disconnectSocket();
+    await _clearStoredSession();
+    ApiClient().revokeTokens();
     Get.offAllNamed(RouteNames.login);
   }
 
@@ -273,13 +323,15 @@ class HomeController extends GetxController {
     try {
       final socketService = Get.find<SocketService>();
       final token = await SecureStorageService().read(StorageKeys.token);
-      if (token == null || token.isEmpty) {
+      final driverId = await _readDriverId();
+      if (token == null || token.isEmpty || driverId == null) {
         Get.snackbar(
           'Offline',
-          'Missing auth token. Please log in again.',
+          'Missing login data. Please log in again.',
           backgroundColor: Colors.white,
           colorText: AppColors.textPrimary,
         );
+        await _handleMissingSession();
         return;
       }
 
@@ -374,8 +426,7 @@ class HomeController extends GetxController {
     final booking = incomingRequest.value!;
     final bookingId = booking.id;
     final vehicleId = booking.vehicleId;
-    final driverIdValue = StorageService().read(_driverIdKey);
-    final driverId = int.tryParse(driverIdValue?.toString() ?? '');
+    final driverId = await _readDriverId();
 
     try {
       if (bookingId == null) {
@@ -386,7 +437,8 @@ class HomeController extends GetxController {
 
       if (driverId == null) {
         isAccepting.value = false;
-        Get.snackbar('Error', 'Driver ID is missing.');
+        Get.snackbar('Error', 'Driver login data is missing. Please log in again.');
+        await _handleMissingSession();
         return;
       }
 
@@ -448,5 +500,38 @@ class HomeController extends GetxController {
     );
 
     showIncomingBookingRequest(mockBooking);
+  }
+
+  Future<int?> _readDriverId() async {
+    final storage = StorageService();
+    final secureStorage = SecureStorageService();
+
+    final dynamic storedDriverId = storage.read(_driverIdKey);
+    if (storedDriverId != null) {
+      return int.tryParse(storedDriverId.toString());
+    }
+
+    final secureDriverId = await secureStorage.read(_driverIdKey);
+    if (secureDriverId != null && secureDriverId.isNotEmpty) {
+      return int.tryParse(secureDriverId);
+    }
+
+    return null;
+  }
+
+  Future<void> _clearStoredSession() async {
+    final secureStorage = SecureStorageService();
+    final storage = StorageService();
+    await secureStorage.delete(StorageKeys.token);
+    await secureStorage.delete(_driverIdKey);
+    storage.delete(StorageKeys.token);
+    storage.delete(_driverIdKey);
+  }
+
+  Future<void> _handleMissingSession() async {
+    _disconnectSocket();
+    await _clearStoredSession();
+    ApiClient().revokeTokens();
+    Get.offAllNamed(RouteNames.login);
   }
 }

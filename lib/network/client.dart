@@ -4,6 +4,7 @@ import 'package:indicab_driver/constants/Keys.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/services/SecureStorageService.dart';
 import 'package:indicab_driver/services/StorageService.dart';
+import 'package:indicab_driver/services/SocketService.dart';
 import 'package:indicab_driver/utils/Helpers.dart';
 import 'network_exceptions.dart';
 
@@ -21,7 +22,7 @@ class ApiClient {
         // baseUrl: 'https://api.indicab.com',
         
         // Local
-        baseUrl: 'http://10.80.57.83:8000/api/driver',
+        baseUrl: 'http://10.138.29.83:8000/api/driver',
 
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
@@ -67,7 +68,15 @@ class ApiClient {
       final secureStorage = SecureStorageService();
       final storage = StorageService();
       await secureStorage.delete(StorageKeys.token);
+      await secureStorage.delete('driverId');
       storage.delete(StorageKeys.token);
+      storage.delete('driverId');
+
+      if (Get.isRegistered<SocketService>()) {
+        try {
+          Get.find<SocketService>().disconnect();
+        } catch (_) {}
+      }
 
       // 3. Navigate to login
       Get.offAllNamed(RouteNames.login);

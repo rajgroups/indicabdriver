@@ -5,4 +5,6 @@ adb devices
 adb tcpip 5555
 adb shell ip addr show wlan2
 
+ adb -s 86be81c9 shell ip addr show wlan2
+ 
 flutter emulators --launch Medium_Phone_API_36

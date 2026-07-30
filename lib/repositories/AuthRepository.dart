@@ -6,6 +6,7 @@ import 'package:indicab_driver/constants/Keys.dart';
 
 class AuthRepository {
   final ApiClient _apiClient = ApiClient();
+  static const String _driverIdKey = 'driverId';
 
   Future<void> sendOtp(String mobileNumber) async {
     if (mobileNumber.trim().length < 10) {
@@ -33,17 +34,23 @@ class AuthRepository {
     }
   }
 
-  static const String _driverIdKey = 'driverId';
-
-  Future<bool> verifyOtp(String mobileNumber, String otp) async {
+  Future<bool> verifyOtp(String mobileNumber, String otp, {String? fcmToken}) async {
     if (mobileNumber.trim().length < 10) {
       throw Exception('Enter a valid mobile number.');
     }
 
     try {
+      final Map<String, dynamic> requestData = {
+        'mobile': mobileNumber,
+        'otp': otp,
+      };
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        requestData['fcm_token'] = fcmToken;
+      }
+
       final response = await _apiClient.post(
         ApiEndpoints.verifyOtp,
-        data: {'mobile': mobileNumber, 'otp': otp},
+        data: requestData,
       );
 
       final payload = response.data;
@@ -52,21 +59,22 @@ class AuthRepository {
         if (data is Map<String, dynamic>) {
           final token = data['token']?.toString();
           final driverData = data['driver'];
+          final driverId = driverData is Map<String, dynamic> ? driverData['id']?.toString() : null;
 
-          if (token != null && driverData is Map<String, dynamic>) {
-            final driverId = driverData['id']?.toString();
+          if (token != null && token.isNotEmpty && driverId != null && driverId.isNotEmpty) {
+            final secureStorage = SecureStorageService();
+            final storage = StorageService();
+            await secureStorage.write(StorageKeys.token, token);
+            storage.write(StorageKeys.token, token);
+            storage.write(_driverIdKey, driverId);
+            await secureStorage.write(_driverIdKey, driverId);
 
-          final secureStorage = SecureStorageService();
-          final storage = StorageService();
-          await secureStorage.write(StorageKeys.token, token);
-          storage.write(StorageKeys.token, token);
-            if (driverId != null) {
-              storage.write(_driverIdKey, driverId);
-            }
-
-          _apiClient.setTokens(token);
-          return true;
+            _apiClient.setTokens(token);
+            return true;
           }
+
+          await _clearStoredAuthData();
+          throw Exception('Login data is incomplete. Please log in again.');
         }
       }
       return false;
@@ -74,5 +82,14 @@ class AuthRepository {
       print('verifyOtp error: $e');
       rethrow;
     }
+  }
+
+  Future<void> _clearStoredAuthData() async {
+    final secureStorage = SecureStorageService();
+    final storage = StorageService();
+    await secureStorage.delete(StorageKeys.token);
+    await secureStorage.delete(_driverIdKey);
+    storage.delete(StorageKeys.token);
+    storage.delete(_driverIdKey);
   }
 }
