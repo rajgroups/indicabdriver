@@ -22,7 +22,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
   final BookingRepository _bookingRepository = BookingRepository(ApiClient());
 
   /// Base URL for the WebSocket connection.
-  final String _baseUrl = 'ws://10.138.29.83:9502';
+  final String _baseUrl = 'ws://10.137.100.83:9502';
 
   /// Reactive flag to observe connection status across the app.
   final RxBool isConnected = false.obs;
