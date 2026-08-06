@@ -12,6 +12,8 @@ import 'package:indicab_driver/services/SocketService.dart';
 import 'package:indicab_driver/services/StorageService.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:indicab_driver/utils/Helpers.dart';
+
 class AuthController extends GetxController {
   AuthController({required AuthRepository repository})
       : _repository = repository;
@@ -24,6 +26,7 @@ class AuthController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool otpSent = false.obs;
   final RxString errorMessage = ''.obs;
+  RxString selectedCountryCode = "+91".obs;
   static const String _driverIdKey = 'driverId';
 
   @override
@@ -71,6 +74,7 @@ class AuthController extends GetxController {
     final mobile = mobileController.text.trim();
     if (mobile.length < 10) {
       errorMessage.value = 'Please enter a valid mobile number.';
+      Helpers.error(errorMessage.value);
       return;
     }
 
@@ -80,11 +84,17 @@ class AuthController extends GetxController {
     try {
       await _repository.sendOtp(mobile);
       otpSent.value = true;
+      Get.toNamed(RouteNames.otp);
     } catch (e) {
       errorMessage.value = e.toString().replaceFirst('Exception: ', '');
+      Helpers.error(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> loginWithGoogle() async {
+    Helpers.error("Google Sign-In is coming soon.");
   }
 
   Future<void> verifyOtp() async {

@@ -1,35 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:indicab_driver/constants/Colors.dart';
 
 class AppScreen extends StatelessWidget {
+  final Widget child;
+  final Color backgroundColor;
+  final PreferredSizeWidget? appBar;
+  final EdgeInsetsGeometry? padding;
+  final bool scrollable;
+  final bool safeAreaBottom;
+  final ScrollPhysics? physics;
+  final bool resizeToAvoidBottomInset;
+
   const AppScreen({
     super.key,
     required this.child,
-    this.backgroundColor,
+    this.backgroundColor = AppColors.white,
+    this.appBar,
     this.padding,
     this.scrollable = false,
+    this.safeAreaBottom = true,
+    this.physics,
+    this.resizeToAvoidBottomInset = true,
   });
-
-  final Widget child;
-  final Color? backgroundColor;
-  final EdgeInsetsGeometry? padding;
-  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
-    Widget content = padding != null
-        ? Padding(padding: padding!, child: child)
-        : child;
+    Widget content = child;
+
+    if (padding != null) {
+      content = Padding(padding: padding!, child: content);
+    }
 
     if (scrollable) {
       content = SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: physics ?? const BouncingScrollPhysics(),
         child: content,
       );
     }
 
     return Scaffold(
-      backgroundColor: backgroundColor ?? Colors.white,
-      body: SafeArea(child: content),
+      backgroundColor: backgroundColor,
+      appBar: appBar,
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+      body: SafeArea(bottom: safeAreaBottom, child: content),
     );
   }
 }

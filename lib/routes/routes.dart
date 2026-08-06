@@ -5,6 +5,7 @@ import 'package:indicab_driver/bindings/ride_binding.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/views/HomeView.dart';
 import 'package:indicab_driver/views/LoginView.dart';
+import 'package:indicab_driver/views/OtpView.dart';
 import 'package:indicab_driver/views/RideView.dart';
 import 'package:indicab_driver/views/SplashView.dart';
 
@@ -24,6 +25,11 @@ class AppPages {
     GetPage(
       name: RouteNames.login,
       page: () => const LoginView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: RouteNames.otp,
+      page: () => const OtpView(),
       binding: AuthBinding(),
     ),
     GetPage(

@@ -1,381 +1,489 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/constants/Strings.dart';
 import 'package:indicab_driver/controllers/AuthController.dart';
+import 'package:indicab_driver/layout/app.dart';
+import 'package:indicab_driver/views/components/login_illustration.dart';
+import 'package:indicab_driver/views/components/social_button.dart';
 
 class LoginView extends GetView<AuthController> {
   const LoginView({super.key});
 
+  static const List<Map<String, String>> countryCodes = [
+    {"code": "+91", "flag": "🇮🇳", "name": "India"},
+    {"code": "+1", "flag": "🇺🇸", "name": "USA"},
+    {"code": "+44", "flag": "🇬🇧", "name": "UK"},
+    {"code": "+971", "flag": "🇦🇪", "name": "UAE"},
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScreen(
       backgroundColor: AppColors.authBackground,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            const _LoginBackdrop(),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 28.0),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Obx(() => _Header(otpSent: controller.otpSent.value)),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Obx(
-                          () => _LoginCard(
+      resizeToAvoidBottomInset: true,
+      child: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// Top Hero Banner Card
+                        const LoginIllustration(),
+
+                        const SizedBox(height: 16),
+
+                        /// Main Form Card (Stretches to fill full available vertical height)
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: AppColors.borderSoft,
+                                width: 1.2,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0C000000),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 8),
+                                ),
+                              ],
+                            ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  controller.otpSent.value ? AppStrings.otp : AppStrings.login,
-                                  style: const TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  controller.otpSent.value
-                                      ? 'We have sent a 4-digit code to your number.'
-                                      : 'Enter your number to receive a driver login code.',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    height: 1.45,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                if (!controller.otpSent.value) ...[
-                                  _InputField(
-                                    controller: controller.mobileController,
-                                    hintText: AppStrings.mobile_number,
-                                    keyboardType: TextInputType.phone,
-                                    prefixIcon: Icons.phone_iphone_rounded,
-                                    maxLength: 10,
-                                  ),
-                                ] else ...[
-                                  _InputField(
-                                    controller: controller.otpController,
-                                    hintText: 'Enter OTP',
-                                    keyboardType: TextInputType.number,
-                                    prefixIcon: Icons.lock_outline_rounded,
-                                    maxLength: 4,
-                                  ),
-                                ],
-                                const SizedBox(height: 6),
-                                AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 250),
-                                  child: controller.errorMessage.value.isNotEmpty
-                                      ? Padding(
-                                          key: const ValueKey('error'),
-                                          padding: const EdgeInsets.only(top: 4),
-                                          child: Text(
-                                            controller.errorMessage.value,
-                                            style: const TextStyle(
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.w600,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          "Driver Mobile Number",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
+                                            fontFamily: 'SF Pro Text',
+                                          ),
+                                        ),
+
+                                        /// Live Digit Validation Counter
+                                        ValueListenableBuilder<TextEditingValue>(
+                                          valueListenable:
+                                              controller.mobileController,
+                                          builder: (context, value, child) {
+                                            final length = value.text.length;
+                                            final isValid = length == 10;
+                                            return Row(
+                                              children: [
+                                                if (isValid)
+                                                  Container(
+                                                    margin: const EdgeInsets
+                                                        .only(right: 4),
+                                                    child: const Icon(
+                                                      Icons.check_circle_rounded,
+                                                      color: Color(0xFF00C853),
+                                                      size: 14,
+                                                    ),
+                                                  ),
+                                                Text(
+                                                  "$length/10",
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: isValid
+                                                        ? const Color(0xFF00C853)
+                                                        : AppColors.textMuted,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+
+                                    /// Phone Input Container
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: AppColors.inputFill,
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: AppColors.border,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 2,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          /// Country Code Picker Dropdown
+                                          Obx(
+                                            () => Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: AppColors.borderSoft,
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: DropdownButtonHideUnderline(
+                                                child: DropdownButton<String>(
+                                                  value: controller
+                                                      .selectedCountryCode.value,
+                                                  isDense: true,
+                                                  icon: const Icon(
+                                                    Icons
+                                                        .keyboard_arrow_down_rounded,
+                                                    size: 16,
+                                                    color:
+                                                        AppColors.textSecondary,
+                                                  ),
+                                                  items: countryCodes.map((item) {
+                                                    return DropdownMenuItem<
+                                                        String>(
+                                                      value: item["code"],
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Text(
+                                                            item["flag"]!,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 14,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 4,
+                                                          ),
+                                                          Text(
+                                                            item["code"]!,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight.w700,
+                                                              color: AppColors
+                                                                  .textPrimary,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                  onChanged: (val) {
+                                                    if (val != null) {
+                                                      controller
+                                                          .selectedCountryCode
+                                                          .value = val;
+                                                    }
+                                                  },
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        )
-                                      : const SizedBox.shrink(key: ValueKey('empty')),
-                                ),
-                                const SizedBox(height: 18),
-                                _PrimaryActionButton(
-                                  label: controller.otpSent.value
-                                      ? 'Verify & Continue'
-                                      : AppStrings.send_otp,
-                                  isLoading: controller.isLoading.value,
-                                  onPressed: controller.isLoading.value
-                                      ? null
-                                      : () {
-                                          if (controller.otpSent.value) {
-                                            controller.verifyOtp();
-                                          } else {
-                                            controller.sendOtp();
-                                          }
-                                        },
-                                ),
-                                if (controller.otpSent.value) ...[
-                                  const SizedBox(height: 12),
-                                  TextButton(
-                                    onPressed: controller.isLoading.value
-                                        ? null
-                                        : controller.reset,
-                                    child: const Text(
-                                      'Change mobile number',
-                                      style: TextStyle(
-                                        color: AppColors.textSecondary,
-                                        fontWeight: FontWeight.w700,
+
+                                          const SizedBox(width: 10),
+
+                                          /// Mobile Field Input
+                                          Expanded(
+                                            child: TextField(
+                                              controller:
+                                                  controller.mobileController,
+                                              keyboardType: TextInputType.phone,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 1.0,
+                                              ),
+                                              decoration: InputDecoration(
+                                                hintText: "Enter 10-digit mobile",
+                                                hintStyle: TextStyle(
+                                                  fontSize: 14,
+                                                  color: AppColors.textMuted
+                                                      .withValues(alpha: 0.7),
+                                                  fontWeight: FontWeight.w400,
+                                                  letterSpacing: 0,
+                                                ),
+                                                border: InputBorder.none,
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                  vertical: 12,
+                                                ),
+                                              ),
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter
+                                                    .digitsOnly,
+                                                LengthLimitingTextInputFormatter(
+                                                  10,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+
+                                          /// Clear Icon
+                                          ValueListenableBuilder<
+                                            TextEditingValue
+                                          >(
+                                            valueListenable:
+                                                controller.mobileController,
+                                            builder: (context, value, child) {
+                                              if (value.text.isEmpty) {
+                                                return const SizedBox.shrink();
+                                              }
+                                              return IconButton(
+                                                icon: const Icon(
+                                                  Icons.cancel_rounded,
+                                                  color: AppColors.textMuted,
+                                                  size: 18,
+                                                ),
+                                                onPressed: () => controller
+                                                    .mobileController
+                                                    .clear(),
+                                              );
+                                            },
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                ],
-                                const SizedBox(height: 18),
-                                const _HintBox(),
+
+                                    const SizedBox(height: 18),
+
+                                    /// Gradient Action Button
+                                    Obx(
+                                      () => SizedBox(
+                                        width: double.infinity,
+                                        height: 48,
+                                        child: ElevatedButton(
+                                          onPressed: controller.isLoading.value
+                                              ? null
+                                              : controller.sendOtp,
+                                          style: ElevatedButton.styleFrom(
+                                            padding: EdgeInsets.zero,
+                                            elevation: 0,
+                                            backgroundColor: Colors.transparent,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                            ),
+                                          ),
+                                          child: Ink(
+                                            decoration: BoxDecoration(
+                                              gradient: controller.isLoading.value
+                                                  ? null
+                                                  : const LinearGradient(
+                                                      colors: [
+                                                        Color(0xFFF5B800),
+                                                        Color(0xFFE6A700),
+                                                      ],
+                                                      begin: Alignment.centerLeft,
+                                                      end:
+                                                          Alignment.centerRight,
+                                                    ),
+                                              color: controller.isLoading.value
+                                                  ? AppColors.border
+                                                  : null,
+                                              borderRadius: BorderRadius.circular(
+                                                24,
+                                              ),
+                                              boxShadow: controller
+                                                      .isLoading.value
+                                                  ? null
+                                                  : [
+                                                      BoxShadow(
+                                                        color: const Color(
+                                                          0xFFF5B800,
+                                                        ).withValues(alpha: 0.35),
+                                                        blurRadius: 12,
+                                                        offset: const Offset(
+                                                          0,
+                                                          4,
+                                                        ),
+                                                      ),
+                                                    ],
+                                            ),
+                                            child: Container(
+                                              alignment: Alignment.center,
+                                              child: controller.isLoading.value
+                                                  ? const SizedBox(
+                                                      height: 20,
+                                                      width: 20,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            strokeWidth: 2.2,
+                                                            color:
+                                                                AppColors.black,
+                                                          ),
+                                                    )
+                                                  : const Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Text(
+                                                          AppStrings.contin,
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.w800,
+                                                            color: Colors.black,
+                                                            letterSpacing: 0.3,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 6),
+                                                        Icon(
+                                                          Icons
+                                                              .arrow_forward_rounded,
+                                                          color: Colors.black,
+                                                          size: 18,
+                                                        ),
+                                                      ],
+                                                    ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                Column(
+                                  children: [
+                                    const SizedBox(height: 16),
+
+                                    /// OR Divider
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Divider(
+                                            color: AppColors.border,
+                                            thickness: 1,
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                          ),
+                                          child: Text(
+                                            AppStrings.or,
+                                            style: TextStyle(
+                                              color: AppColors.textMuted,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Divider(
+                                            color: AppColors.border,
+                                            thickness: 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 16),
+
+                                    /// Social Login Buttons
+                                    SocialButton(
+                                      icon: Icons.g_mobiledata_rounded,
+                                      label: AppStrings.sign_google,
+                                      onTap: controller.loginWithGoogle,
+                                      isGoogle: true,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    SocialButton(
+                                      icon: Icons.apple_rounded,
+                                      label: AppStrings.sign_apple,
+                                      onTap: () {
+                                        // Apple sign in action
+                                      },
+                                      isGoogle: false,
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
                         ),
-                      ),
+
+                        const SizedBox(height: 16),
+
+                        /// Terms & Privacy Footer Links
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text.rich(
+                              TextSpan(
+                                text: "${AppStrings.agree_terms} ",
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                  height: 1.35,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: AppStrings.terms,
+                                    style: TextStyle(
+                                      color: AppColors.primaryDark,
+                                      fontWeight: FontWeight.w700,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                  const TextSpan(
+                                    text: " ${AppStrings.and_sign} ",
+                                    style: TextStyle(color: AppColors.textMuted),
+                                  ),
+                                  TextSpan(
+                                    text: AppStrings.privacy,
+                                    style: TextStyle(
+                                      color: AppColors.primaryDark,
+                                      fontWeight: FontWeight.w700,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0),
-                    child: _Footer(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LoginBackdrop extends StatelessWidget {
-  const _LoginBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFD34D),
-              Color(0xFFF8F8F5),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.otpSent});
-
-  final bool otpSent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 68,
-          height: 68,
-          decoration: BoxDecoration(
-            color: AppColors.black,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x33000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.local_taxi_rounded, color: AppColors.primary, size: 36),
-        ),
-        const SizedBox(height: 18),
-        const Text(
-          AppStrings.appName,
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w900,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          otpSent ? 'Almost there.' : AppStrings.title_tag,
-          style: const TextStyle(
-            fontSize: 15,
-            color: AppColors.textSecondary,
-            height: 1.4,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LoginCard extends StatelessWidget {
-  const _LoginCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.borderSoft),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 24,
-            offset: Offset(0, 12),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _InputField extends StatelessWidget {
-  const _InputField({
-    required this.controller,
-    required this.hintText,
-    required this.keyboardType,
-    required this.prefixIcon,
-    this.maxLength,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final TextInputType keyboardType;
-  final IconData prefixIcon;
-  final int? maxLength;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLength: maxLength,
-      style: const TextStyle(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.w600,
-      ),
-      decoration: InputDecoration(
-        counterText: '',
-        hintText: hintText,
-        prefixIcon: Icon(prefixIcon, color: AppColors.primaryDark),
-        filled: true,
-        fillColor: AppColors.inputFill,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.primaryDark, width: 1.5),
-        ),
-      ),
-    );
-  }
-}
-
-class _PrimaryActionButton extends StatelessWidget {
-  const _PrimaryActionButton({
-    required this.label,
-    required this.isLoading,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool isLoading;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 54,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.black,
-          foregroundColor: AppColors.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          elevation: 0,
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-              )
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
                 ),
               ),
-      ),
-    );
-  }
-}
-
-class _HintBox extends StatelessWidget {
-  const _HintBox();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF8DB),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE9D37A)),
-      ),
-      child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryDark, size: 20),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Use OTP 1234 in this demo build.',
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.4,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Footer extends StatelessWidget {
-  const _Footer();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        '© 2026 IndiCab. All rights reserved.',
-        style: TextStyle(
-          fontSize: 12,
-          color: AppColors.textSecondary,
-          fontWeight: FontWeight.w500,
+            );
+          },
         ),
       ),
     );

@@ -2,6 +2,7 @@ class RouteNames {
   static const splash = '/splash';
   static const home = '/home';
   static const login = '/login';
+  static const otp = '/otp';
   static const ride = '/ride';
   static const rideHistory = '/ride-history';
   static const rideDetails = '/ride-details';
