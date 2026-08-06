@@ -223,8 +223,12 @@ class AuthController extends GetxController {
     final storage = StorageService();
     await secureStorage.delete(StorageKeys.token);
     await secureStorage.delete(_driverIdKey);
+    await secureStorage.delete(StorageKeys.walletBalance);
+    await secureStorage.delete(StorageKeys.driverStatus);
     storage.delete(StorageKeys.token);
     storage.delete(_driverIdKey);
+    storage.delete(StorageKeys.walletBalance);
+    storage.delete(StorageKeys.driverStatus);
   }
 
   void _disconnectSocketIfAvailable() {

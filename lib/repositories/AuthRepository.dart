@@ -60,6 +60,9 @@ class AuthRepository {
           final token = data['token']?.toString();
           final driverData = data['driver'];
           final driverId = driverData is Map<String, dynamic> ? driverData['id']?.toString() : null;
+          final walletBalance = driverData is Map<String, dynamic>
+              ? driverData['wallet_balance']?.toString()
+              : null;
 
           if (token != null && token.isNotEmpty && driverId != null && driverId.isNotEmpty) {
             final secureStorage = SecureStorageService();
@@ -68,6 +71,11 @@ class AuthRepository {
             storage.write(StorageKeys.token, token);
             storage.write(_driverIdKey, driverId);
             await secureStorage.write(_driverIdKey, driverId);
+
+            if (walletBalance != null && walletBalance.isNotEmpty) {
+              storage.write(StorageKeys.walletBalance, walletBalance);
+              await secureStorage.write(StorageKeys.walletBalance, walletBalance);
+            }
 
             _apiClient.setTokens(token);
             return true;
@@ -89,7 +97,11 @@ class AuthRepository {
     final storage = StorageService();
     await secureStorage.delete(StorageKeys.token);
     await secureStorage.delete(_driverIdKey);
+    await secureStorage.delete(StorageKeys.walletBalance);
+    await secureStorage.delete(StorageKeys.driverStatus);
     storage.delete(StorageKeys.token);
     storage.delete(_driverIdKey);
+    storage.delete(StorageKeys.walletBalance);
+    storage.delete(StorageKeys.driverStatus);
   }
 }

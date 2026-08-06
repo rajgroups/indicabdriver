@@ -32,6 +32,7 @@ class HomeRepository {
           'rating': (data['average_rating'] as num? ?? 4.9).toDouble(),
           'earnings': (data['today_earnings'] as num? ?? 0.0).toDouble(),
           'recentBookings': recentBookings,
+          'wallet_balance': (data['wallet_balance'] as num?)?.toDouble() ?? 0.0,
         };
       }
     } catch (e) {
@@ -75,6 +76,39 @@ class HomeRepository {
     }
 
     throw Exception('Unexpected active ride response format.');
+  }
+
+  Future<Map<String, dynamic>> requestWalletRecharge(double amount) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.walletRechargeRequest,
+      data: {'amount': amount},
+    );
+
+    final payload = response.data;
+    if (payload is Map<String, dynamic>) {
+      return payload;
+    }
+
+    return {'status': false, 'message': 'Unexpected response format from server.'};
+  }
+
+  Future<Map<String, dynamic>?> checkAppUpdate() async {
+    try {
+      final response = await _apiClient.get(
+        '/check-update',
+        queryParameters: {
+          'app_version': '1.0.0',
+          'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+        },
+      );
+      final payload = response.data;
+      if (payload is Map<String, dynamic> && payload['data'] is Map<String, dynamic>) {
+        return payload['data'] as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('checkAppUpdate error: $e');
+    }
+    return null;
   }
 }
 

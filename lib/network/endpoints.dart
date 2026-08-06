@@ -16,6 +16,7 @@ class ApiEndpoints {
   static const onlineStatus = '/profile/online-status';
   static String bookingFare(dynamic id) => '/bookings/$id/fare';
   static const updateFcmToken = '/fcm-token';
+  static const walletRechargeRequest = '/wallet/recharge-request';
 }
 
 

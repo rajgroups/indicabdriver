@@ -3,11 +3,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:indicab_driver/constants/Keys.dart';
+import 'package:indicab_driver/models/Driver.dart';
 import 'package:indicab_driver/models/booking_response.dart';
 import 'package:indicab_driver/network/client.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/repository/BookingRepository.dart';
 import 'package:indicab_driver/controllers/RideController.dart';
+import 'package:indicab_driver/controllers/HomeController.dart';
+import 'package:indicab_driver/services/SecureStorageService.dart';
+import 'package:indicab_driver/services/StorageService.dart';
+import 'package:indicab_driver/utils/AppUpdateHelper.dart';
 
 /// A map to hold event handlers.
 typedef EventCallback = void Function(dynamic data);
@@ -26,6 +32,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
 
   /// Reactive flag to observe connection status across the app.
   final RxBool isConnected = false.obs;
+  final Rxn<DriverModel> currentDriver = Rxn<DriverModel>();
 
   /// A map to store event listeners. Controllers can subscribe to events they are interested in.
   final Map<String, List<EventCallback>> _eventListeners = {};
@@ -92,6 +99,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
     _socket?.close();
     _socket = null;
     isConnected.value = false;
+    currentDriver.value = null;
   }
 
   void setToken(String token) {
@@ -198,7 +206,16 @@ class SocketService extends GetxService with WidgetsBindingObserver {
   void _routeEvent(String eventType, Map<String, dynamic> data) {
     switch (eventType) {
       case 'connected':
-        _handleConnectedEvent();
+        _handleConnectedEvent(data);
+        break;
+      case 'app_update':
+        if (data['app_update'] is Map<String, dynamic>) {
+          AppUpdateHelper.evaluateAndShowUpdateNotice(data['app_update'] as Map<String, dynamic>);
+        } else if (data['data'] is Map<String, dynamic>) {
+          AppUpdateHelper.evaluateAndShowUpdateNotice(data['data'] as Map<String, dynamic>);
+        } else {
+          AppUpdateHelper.evaluateAndShowUpdateNotice(data);
+        }
         break;
       case 'pong':
         _handlePong();
@@ -226,9 +243,36 @@ class SocketService extends GetxService with WidgetsBindingObserver {
     });
   }
 
-  void _handleConnectedEvent() {
-    // The server acknowledges auth with a connected payload.
-    // No extra action is needed here beyond suppressing the unknown-event log.
+  void _handleConnectedEvent(Map<String, dynamic> data) {
+    if (data['app_update'] is Map<String, dynamic>) {
+      AppUpdateHelper.evaluateAndShowUpdateNotice(data['app_update'] as Map<String, dynamic>);
+    }
+
+    final driverData = data['driver'];
+    if (driverData is! Map<String, dynamic>) {
+      return;
+    }
+
+    final driver = DriverModel.fromJson(driverData);
+    currentDriver.value = driver;
+
+    final walletBalance = driver.walletBalance;
+    final driverStatus = driver.status;
+
+    if (walletBalance != null) {
+      final walletBalanceText = walletBalance.toStringAsFixed(2);
+      StorageService().write(StorageKeys.walletBalance, walletBalanceText);
+      unawaited(
+        SecureStorageService().write(StorageKeys.walletBalance, walletBalanceText),
+      );
+    }
+
+    if (driverStatus != null && driverStatus.isNotEmpty) {
+      StorageService().write(StorageKeys.driverStatus, driverStatus);
+      unawaited(
+        SecureStorageService().write(StorageKeys.driverStatus, driverStatus),
+      );
+    }
   }
 
   void _handleAuthError(Map<String, dynamic> data) {
@@ -256,39 +300,55 @@ class SocketService extends GetxService with WidgetsBindingObserver {
 
     final status = booking['status']?.toString();
     final bookingNo = booking['booking_no']?.toString();
+    final bookingId = booking['id'];
 
-    if (bookingNo == null || bookingNo.isEmpty) {
+    // ── Handle Cancellation ──────────────────────────────────────────────
+    if (status == 'cancelled') {
+      // Case A: Driver is on the home screen with an accept popup open.
+      //         Dismiss it if the cancelled booking matches.
+      if (Get.isRegistered<HomeController>()) {
+        try {
+          final homeCtrl = Get.find<HomeController>();
+          homeCtrl.dismissCancelledRequest(bookingNo, bookingId);
+        } catch (e) {
+          print('SocketService: Error dismissing popup on cancel: $e');
+        }
+      }
+
+      // Case B: Driver already accepted and is on the ride screen.
+      if (Get.currentRoute == RouteNames.ride) {
+        Get.snackbar(
+          'Ride Cancelled',
+          'The booking was cancelled by the passenger.',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+        );
+        Get.offAllNamed(RouteNames.home);
+      }
       return;
     }
 
-    // Handle cancellation from any screen
-    if (status == 'cancelled') {
-      Get.snackbar(
-        'Ride Cancelled',
-        'The booking was cancelled.',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-      );
-      Get.offAllNamed(RouteNames.home);
+    // ── Route to RideController if already on the ride screen ─────────────
+    if (bookingNo == null || bookingNo.isEmpty) {
       return;
     }
 
     if (Get.currentRoute != RouteNames.ride) {
       final bookingData = BookingDataModel.fromJson(booking);
-      if (bookingData != null) {
-        Get.offAllNamed(RouteNames.ride, arguments: bookingData);
-      }
+      Get.offAllNamed(RouteNames.ride, arguments: bookingData);
       return;
     }
 
     // If already in RideView, update state dynamically
     if (Get.isRegistered<RideController>()) {
-      final bookingId = booking['id']?.toString();
-      if (bookingId == null) return;
+      final bookingIdStr = booking['id']?.toString();
+      if (bookingIdStr == null) return;
 
       // When ride starts or completes, fetch full details to get updated OTP or final fare.
       if (status == 'started' || status == 'completed') {
-        final bookingData = await _fetchBookingData(bookingId);
+        final bookingData = await _fetchBookingData(bookingIdStr);
         if (bookingData != null && Get.isRegistered<RideController>()) {
           final rideCtrl = Get.find<RideController>();
           rideCtrl.booking.value = bookingData;

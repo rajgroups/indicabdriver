@@ -1,4 +1,5 @@
 class DriverModel {
+  final int? id;
   final String? name;
   final String? email;
   final String? phone;
@@ -25,8 +26,10 @@ class DriverModel {
   final String? policeVerificationFile;
   final String? medicalCertificate;
   final String? remarks;
+  final double? walletBalance;
 
   DriverModel({
+    this.id,
     this.name,
     this.email,
     this.phone,
@@ -53,10 +56,12 @@ class DriverModel {
     this.policeVerificationFile,
     this.medicalCertificate,
     this.remarks,
+    this.walletBalance,
   });
 
   factory DriverModel.fromJson(Map<String, dynamic> json) {
     return DriverModel(
+      id: json['id'] is num ? (json['id'] as num).toInt() : int.tryParse(json['id']?.toString() ?? ''),
       name: json['name'],
       email: json['email'],
       phone: json['phone'],
@@ -83,11 +88,14 @@ class DriverModel {
       policeVerificationFile: json['police_verification_file'],
       medicalCertificate: json['medical_certificate'],
       remarks: json['remarks'],
+      walletBalance: (json['wallet_balance'] as num?)?.toDouble() ??
+          double.tryParse(json['wallet_balance']?.toString() ?? ''),
     );
   }
 
   Map<String, dynamic> toJson() {
     return{
+      'id': id,
       'name': name,
       'email': email,
       'phone': phone,
@@ -114,6 +122,7 @@ class DriverModel {
       'police_verification_file': policeVerificationFile,
       'medical_certificate': medicalCertificate,
       'remarks': remarks,
+      'wallet_balance': walletBalance,
     };
   }
 }

@@ -4,8 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:indicab_driver/constants/Colors.dart';
+import 'package:indicab_driver/constants/Keys.dart';
 import 'package:indicab_driver/constants/Strings.dart';
+import 'package:indicab_driver/network/client.dart';
 import 'package:indicab_driver/routes/names.dart';
+import 'package:indicab_driver/services/SecureStorageService.dart';
+import 'package:indicab_driver/services/SocketService.dart';
+import 'package:indicab_driver/services/StorageService.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -15,23 +20,65 @@ class SplashView extends StatefulWidget {
 }
 
 class _SplashViewState extends State<SplashView> {
-  Timer? _timer;
+  bool _isNavigating = false;
 
   @override
   void initState() {
     super.initState();
-    // Smooth transition to Login screen after 2.5 seconds
-    _timer = Timer(const Duration(milliseconds: 2500), _goToLogin);
+    _checkAuthAndNavigate();
   }
 
-  void _goToLogin() {
-    if (!mounted) return;
-    Get.offAllNamed(RouteNames.login);
+  Future<void> _checkAuthAndNavigate() async {
+    final startTime = DateTime.now();
+
+    final secureStorage = SecureStorageService();
+    final storage = StorageService();
+
+    String? token = await secureStorage.read(StorageKeys.token);
+    if (token == null || token.isEmpty) {
+      final dynamic storedToken = storage.read(StorageKeys.token);
+      if (storedToken != null && storedToken.toString().isNotEmpty) {
+        token = storedToken.toString();
+      }
+    }
+
+    dynamic driverId = storage.read('driverId');
+    if (driverId == null || driverId.toString().isEmpty) {
+      driverId = await secureStorage.read('driverId');
+    }
+
+    final bool isAuthorized = token != null &&
+        token.isNotEmpty &&
+        driverId != null &&
+        driverId.toString().isNotEmpty;
+
+    if (isAuthorized) {
+      ApiClient().setTokens(token);
+      if (Get.isRegistered<SocketService>()) {
+        Get.find<SocketService>().setToken(token);
+      }
+    }
+
+    // Keep splash visible for at least 2 seconds for a smooth user experience
+    final elapsed = DateTime.now().difference(startTime);
+    final remaining = const Duration(milliseconds: 2000) - elapsed;
+    if (remaining > Duration.zero) {
+      await Future.delayed(remaining);
+    }
+
+    if (!mounted || _isNavigating) return;
+    _isNavigating = true;
+
+    if (isAuthorized) {
+      Get.offAllNamed(RouteNames.home);
+    } else {
+      Get.offAllNamed(RouteNames.login);
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _isNavigating = true;
     super.dispose();
   }
 

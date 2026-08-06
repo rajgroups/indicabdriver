@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:indicab_driver/models/Driver.dart';
 import 'package:indicab_driver/network/client.dart';
 import 'package:indicab_driver/repositories/HomeRepository.dart';
 import 'package:indicab_driver/repository/BookingRepository.dart';
@@ -15,9 +16,11 @@ import 'package:indicab_driver/constants/Keys.dart';
 import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/models/booking_response.dart';
 import 'package:indicab_driver/utils/Permissions.dart';
+import 'package:indicab_driver/utils/Helpers.dart';
 import 'package:indicab_driver/utils/maps/LocationHelper.dart';
 import 'package:indicab_driver/utils/maps/MarkerHelper.dart';
 import 'package:indicab_driver/utils/maps/CameraHelper.dart';
+import 'package:indicab_driver/utils/AppUpdateHelper.dart';
 
 class HomeController extends GetxController {
   HomeController({
@@ -36,7 +39,9 @@ class HomeController extends GetxController {
   final RxInt todayTrips = 0.obs;
   final RxDouble rating = 4.9.obs;
   final RxDouble todayEarnings = 0.0.obs;
+  final RxDouble walletBalance = 0.0.obs;
   final RxList<BookingDataModel> recentTrips = <BookingDataModel>[].obs;
+  final RxBool isLocating = false.obs;
 
 
   // Incoming Booking request states
@@ -48,7 +53,9 @@ class HomeController extends GetxController {
 
   Timer? _countdownTimer;
   Worker? _pendingIncomingBookingWorker;
+  Worker? _walletBalanceWorker;
   static const String _driverIdKey = 'driverId';
+  bool _walletBalanceWarningShown = false;
   bool _checkedActiveRide = false;
 
   // Map variables
@@ -61,14 +68,28 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    final storedBalance = StorageService().read(StorageKeys.walletBalance);
+    if (storedBalance != null) {
+      walletBalance.value = double.tryParse(storedBalance.toString()) ?? 0.0;
+    }
     _bindPendingIncomingBooking();
+    _bindWalletBalanceUpdates();
     loadDashboard();
+    _showWalletBalanceWarningIfNeeded();
     _requestPermissionAndTrack();
     if (isOnline.value) {
       _connectSocket();
     }
     Future.microtask(_consumePendingIncomingBooking);
     Future.microtask(_checkActiveRide);
+    Future.microtask(_checkAppUpdate);
+  }
+
+  Future<void> _checkAppUpdate() async {
+    final updateData = await _repository.checkAppUpdate();
+    if (updateData != null) {
+      AppUpdateHelper.evaluateAndShowUpdateNotice(updateData);
+    }
   }
 
   @override
@@ -76,11 +97,13 @@ class HomeController extends GetxController {
     _stopTracking();
     _countdownTimer?.cancel();
     _pendingIncomingBookingWorker?.dispose();
+    _walletBalanceWorker?.dispose();
     try {
       final socketService = Get.find<SocketService>();
       socketService.off('booking_request', _handleIncomingBookingRequest);
+      socketService.off('booking_status', _handleBookingStatusUpdate);
     } catch (e) {
-      print('Error removing booking listener in onClose: $e');
+      print('Error removing booking listeners in onClose: $e');
     }
     super.onClose();
   }
@@ -89,6 +112,69 @@ class HomeController extends GetxController {
     final granted = await PermissionHelper.requestLocation();
     if (granted && isOnline.value) {
       _startTracking();
+    }
+  }
+
+  Future<void> focusCurrentLocation({bool resetBearing = false}) async {
+    if (isLocating.value) return;
+
+    isLocating.value = true;
+    try {
+      if (currentPosition.value == null) {
+        final granted = await PermissionHelper.requestLocation();
+        if (!granted) {
+          Get.snackbar(
+            'Location Required',
+            'Please allow location access to center the map on your current position.',
+            backgroundColor: Colors.white,
+            colorText: AppColors.textPrimary,
+          );
+          return;
+        }
+      }
+
+      final position = await LocationHelper.getCurrentLocation();
+      if (position == null) {
+        Get.snackbar(
+          'Location Unavailable',
+          'Unable to fetch your current location right now.',
+          backgroundColor: Colors.white,
+          colorText: AppColors.textPrimary,
+        );
+        return;
+      }
+
+      final latLng = LatLng(position.latitude, position.longitude);
+      currentPosition.value = latLng;
+      heading.value = position.heading;
+      _updateDriverMarker(latLng, position.heading);
+
+      if (mapController != null) {
+        CameraHelper.animateToPosition(
+          mapController,
+          latLng,
+          bearing: resetBearing ? 0.0 : position.heading,
+        );
+      }
+
+      if (!isOnline.value) {
+        Get.snackbar(
+          'Location Centered',
+          'Your current location is now visible on the map.',
+          backgroundColor: Colors.white,
+          colorText: AppColors.textPrimary,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error focusing current location: $e');
+      Get.snackbar(
+        'Location Error',
+        'Could not center the map on your current location.',
+        backgroundColor: Colors.white,
+        colorText: AppColors.textPrimary,
+      );
+    } finally {
+      isLocating.value = false;
     }
   }
 
@@ -184,6 +270,9 @@ class HomeController extends GetxController {
       todayTrips.value = data['todayTrips'] as int? ?? 0;
       rating.value = (data['rating'] as num? ?? 4.9).toDouble();
       todayEarnings.value = (data['earnings'] as num? ?? 0.0).toDouble();
+      if (data['wallet_balance'] != null) {
+        walletBalance.value = (data['wallet_balance'] as num).toDouble();
+      }
 
       final recent = data['recentBookings'];
       if (recent is List<BookingDataModel>) {
@@ -193,6 +282,190 @@ class HomeController extends GetxController {
       debugPrint('Error loading dashboard: $e');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void _showWalletBalanceWarningIfNeeded() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_walletBalanceWarningShown) {
+        return;
+      }
+
+      final socketService = Get.isRegistered<SocketService>()
+          ? Get.find<SocketService>()
+          : null;
+      final walletBalanceValue = socketService?.currentDriver.value?.walletBalance ??
+          StorageService().read(StorageKeys.walletBalance);
+      final currentBal = double.tryParse(walletBalanceValue?.toString() ?? '') ?? walletBalance.value;
+
+      if (currentBal > 0) {
+        return;
+      }
+
+      _walletBalanceWarningShown = true;
+      Helpers.warning('Wallet balance is 0.00. Please recharge to continue.');
+    });
+  }
+
+  void _bindWalletBalanceUpdates() {
+    if (!Get.isRegistered<SocketService>()) {
+      return;
+    }
+
+    _walletBalanceWorker = ever<DriverModel?>(
+      Get.find<SocketService>().currentDriver,
+      (driver) {
+        if (driver?.walletBalance != null) {
+          walletBalance.value = driver!.walletBalance!;
+        }
+        _showWalletBalanceWarningIfNeeded();
+      },
+    );
+  }
+
+  void showRechargeDialog() {
+    final TextEditingController amountController = TextEditingController(text: '500');
+    final RxDouble selectedAmount = 500.0.obs;
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF167A3F).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: Color(0xFF167A3F),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Recharge Wallet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Select Amount (₹)',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Obx(() => Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [100.0, 200.0, 500.0, 1000.0].map((amt) {
+                  final isSelected = selectedAmount.value == amt;
+                  return ChoiceChip(
+                    label: Text('₹${amt.toInt()}'),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFF167A3F),
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    onSelected: (selected) {
+                      if (selected) {
+                        selectedAmount.value = amt;
+                        amountController.text = amt.toInt().toString();
+                      }
+                    },
+                  );
+                }).toList(),
+              )),
+              const SizedBox(height: 12),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Custom Amount',
+                  prefixText: '₹ ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onChanged: (val) {
+                  final parsed = double.tryParse(val);
+                  if (parsed != null) {
+                    selectedAmount.value = parsed;
+                  }
+                },
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF167A3F),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {
+                      final amt = double.tryParse(amountController.text) ?? selectedAmount.value;
+                      if (amt <= 0) {
+                        Get.snackbar('Error', 'Please enter a valid amount');
+                        return;
+                      }
+                      Get.back();
+                      rechargeWallet(amt);
+                    },
+                    child: const Text('Proceed to Recharge'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> rechargeWallet(double amount) async {
+    try {
+      Helpers.loading();
+      final response = await _repository.requestWalletRecharge(amount);
+      Helpers.close();
+
+      final bool status = response['status'] == true;
+      final String message = response['message']?.toString() ??
+          'Recharge request submitted successfully. Pending admin approval.';
+
+      if (status) {
+        Helpers.success(message, null);
+      } else {
+        Helpers.error(message);
+      }
+    } catch (e) {
+      Helpers.close();
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      Helpers.error('Failed to submit recharge request: $errorMsg');
     }
   }
 
@@ -339,6 +612,9 @@ class HomeController extends GetxController {
 
       // Listen for incoming booking requests
       socketService.on('booking_request', _handleIncomingBookingRequest);
+
+      // Listen for booking status updates (e.g., user cancellation while popup is shown)
+      socketService.on('booking_status', _handleBookingStatusUpdate);
     } catch (e) {
       print('Error in _connectSocket: $e');
     }
@@ -348,8 +624,9 @@ class HomeController extends GetxController {
     try {
       final socketService = Get.find<SocketService>();
       socketService.off('booking_request', _handleIncomingBookingRequest);
+      socketService.off('booking_status', _handleBookingStatusUpdate);
       socketService.disconnect();
-      
+
       // Clear active request if offline
       _clearRequestState();
     } catch (e) {
@@ -366,6 +643,70 @@ class HomeController extends GetxController {
     if (bookingMap != null && bookingMap is Map<String, dynamic>) {
       final booking = BookingDataModel.fromJson(bookingMap);
       showIncomingBookingRequest(booking);
+    }
+  }
+
+  /// Handles incoming booking_status socket events on the home screen.
+  /// Specifically auto-dismisses the accept popup when a user cancels.
+  void _handleBookingStatusUpdate(dynamic data) {
+    if (data is! Map<String, dynamic>) return;
+
+    final bookingMap = data['booking'];
+    if (bookingMap is! Map<String, dynamic>) return;
+
+    final status = bookingMap['status']?.toString().trim().toLowerCase();
+    if (status != 'cancelled') return;
+
+    // Only act if the popup is currently showing
+    if (!showIncomingRequest.value) return;
+
+    final cancelledId = bookingMap['id'];
+    final cancelledNo = bookingMap['booking_no']?.toString();
+    final current = incomingRequest.value;
+
+    final idMatch = cancelledId != null &&
+        current?.id != null &&
+        cancelledId.toString() == current!.id.toString();
+    final noMatch = cancelledNo != null &&
+        cancelledNo.isNotEmpty &&
+        cancelledNo == current?.bookingNo;
+
+    if (idMatch || noMatch) {
+      _clearRequestState();
+      Get.snackbar(
+        'Ride Cancelled',
+        'The passenger cancelled their booking.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  /// Public entry-point for the SocketService to dismiss the popup
+  /// when a booking accepted by this driver gets cancelled externally.
+  void dismissCancelledRequest(String? bookingNo, dynamic bookingId) {
+    if (!showIncomingRequest.value) return;
+
+    final current = incomingRequest.value;
+    final idMatch = bookingId != null &&
+        current?.id != null &&
+        bookingId.toString() == current!.id.toString();
+    final noMatch = bookingNo != null &&
+        bookingNo.isNotEmpty &&
+        bookingNo == current?.bookingNo;
+
+    if (idMatch || noMatch) {
+      _clearRequestState();
+      Get.snackbar(
+        'Ride Cancelled',
+        'The passenger cancelled their booking.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
@@ -524,8 +865,12 @@ class HomeController extends GetxController {
     final storage = StorageService();
     await secureStorage.delete(StorageKeys.token);
     await secureStorage.delete(_driverIdKey);
+    await secureStorage.delete(StorageKeys.walletBalance);
+    await secureStorage.delete(StorageKeys.driverStatus);
     storage.delete(StorageKeys.token);
     storage.delete(_driverIdKey);
+    storage.delete(StorageKeys.walletBalance);
+    storage.delete(StorageKeys.driverStatus);
   }
 
   Future<void> _handleMissingSession() async {

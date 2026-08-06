@@ -55,6 +55,14 @@ class Helpers {
     );
   }
 
+  static void warning(String message) {
+    QuickAlert.show(
+      context: Get.context!,
+      type: QuickAlertType.warning,
+      text: message,
+    );
+  }
+
   static void loading() {
     QuickAlert.show(
       context: Get.context!,

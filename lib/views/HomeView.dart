@@ -12,6 +12,9 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final sheetTopOffset = mediaQuery.size.height * 0.4;
+
     return Scaffold(
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -26,6 +29,26 @@ class HomeView extends GetView<HomeController> {
               child: _TopBar(
                 isOnline: controller.isOnline.value,
                 onLogout: controller.logout,
+              ),
+            ),
+            Positioned(
+              top: mediaQuery.padding.top + 84,
+              right: 16,
+              child: _MapControlButton(
+                icon: Icons.explore_rounded,
+                onTap: () => controller.focusCurrentLocation(resetBearing: true),
+                isLoading: controller.isLocating.value,
+                tooltip: 'Reset compass',
+              ),
+            ),
+            Positioned(
+              right: 16,
+              bottom: sheetTopOffset + 16,
+              child: _MapControlButton(
+                icon: Icons.my_location_rounded,
+                onTap: controller.focusCurrentLocation,
+                isLoading: controller.isLocating.value,
+                tooltip: 'Show current location',
               ),
             ),
             DraggableScrollableSheet(
@@ -47,6 +70,8 @@ class HomeView extends GetView<HomeController> {
                         _StatusCard(
                           isOnline: controller.isOnline.value,
                           onToggle: controller.toggleOnline,
+                          walletBalance: controller.walletBalance.value,
+                          onRecharge: controller.showRechargeDialog,
                         ),
                         _EarningsCard(
                           earnings: controller.todayEarnings.value,
@@ -64,24 +89,12 @@ class HomeView extends GetView<HomeController> {
                           trips: controller.recentTrips,
                           onSeeAll: () => Get.toNamed(RouteNames.rideHistory),
                         ),
-
                       ],
                     ),
                   ),
                 );
               },
             ),
-            if (controller.isOnline.value)
-              Positioned(
-                top: 80,
-                right: 16,
-                child: FloatingActionButton.small(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.black,
-                  onPressed: controller.simulateIncomingRequest,
-                  child: const Icon(Icons.flash_on_rounded),
-                ),
-              ),
             if (controller.showIncomingRequest.value && controller.incomingRequest.value != null)
               _IncomingRideCard(
                 booking: controller.incomingRequest.value!,
@@ -108,7 +121,7 @@ class _DummyMap extends GetView<HomeController> {
         pickupLocation: controller.currentPosition.value,
         markers: controller.markers,
         onMapCreated: controller.onMapCreated,
-        compassEnabled: true,
+        compassEnabled: false,
         myLocationButtonEnabled: false,
       );
     });
@@ -128,52 +141,143 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      // Removed background color to make it transparent
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.local_taxi_rounded, color: Colors.black, size: 24),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFFFF3C4),
+              Color(0xFFFFE08A),
+              Color(0xFFF5B800),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              AppStrings.appName,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary, // Changed to be visible on map
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE5B100), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF5B800).withValues(alpha: 0.18),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(11),
+                child: Image.asset(
+                  'assets/images/icons/app_icon.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.local_taxi_rounded,
+                    color: Colors.black,
+                    size: 24,
+                  ),
+                ),
               ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: isOnline ? Colors.green : Colors.red,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              isOnline ? 'Online' : 'Offline',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                AppStrings.appName,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1B1B1B),
+                ),
               ),
             ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: isOnline ? const Color(0xFF167A3F) : const Color(0xFFB3261E),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                isOnline ? 'Online' : 'Offline',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              onPressed: onLogout,
+              icon: const Icon(Icons.logout_rounded, color: Color(0xFF1B1B1B), size: 22),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MapControlButton extends StatelessWidget {
+  const _MapControlButton({
+    required this.icon,
+    required this.onTap,
+    required this.tooltip,
+    this.isLoading = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final String tooltip;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Tooltip(
+        message: tooltip,
+        child: InkWell(
+          onTap: isLoading ? null : onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFF0D77A), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFF5B800).withValues(alpha: 0.18),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Center(
+              child: isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      icon,
+                      color: const Color(0xFF1B1B1B),
+                      size: 24,
+                    ),
+            ),
           ),
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: onLogout,
-            icon: const Icon(Icons.logout_rounded, color: AppColors.textPrimary, size: 22),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          )
-        ],
+        ),
       ),
     );
   }
@@ -183,13 +287,19 @@ class _StatusCard extends StatelessWidget {
   const _StatusCard({
     required this.isOnline,
     required this.onToggle,
+    required this.walletBalance,
+    required this.onRecharge,
   });
 
   final bool isOnline;
   final VoidCallback onToggle;
+  final double walletBalance;
+  final VoidCallback onRecharge;
 
   @override
   Widget build(BuildContext context) {
+    final bool isZeroBalance = walletBalance <= 0;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -284,29 +394,109 @@ class _StatusCard extends StatelessWidget {
           ),
           if (isOnline) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.white, size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'You will receive ride requests automatically',
-                      style: TextStyle(
+            if (isZeroBalance) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB3261E).withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFF8A80), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
                         color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        size: 20,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '0 balance in your wallet',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Please recharge to continue receiving ride requests',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: onRecharge,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFFB3261E),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Recharge',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'You will receive ride requests automatically',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ],
       ),

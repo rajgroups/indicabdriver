@@ -69,8 +69,12 @@ class ApiClient {
       final storage = StorageService();
       await secureStorage.delete(StorageKeys.token);
       await secureStorage.delete('driverId');
+      await secureStorage.delete(StorageKeys.walletBalance);
+      await secureStorage.delete(StorageKeys.driverStatus);
       storage.delete(StorageKeys.token);
       storage.delete('driverId');
+      storage.delete(StorageKeys.walletBalance);
+      storage.delete(StorageKeys.driverStatus);
 
       if (Get.isRegistered<SocketService>()) {
         try {
