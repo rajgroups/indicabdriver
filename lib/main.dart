@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
+import 'package:indicab_driver/config/theme.dart';
 import 'package:indicab_driver/routes/routes.dart';
 import 'package:indicab_driver/services/FirebaseService.dart';
 import 'package:indicab_driver/services/SocketService.dart';
@@ -26,14 +27,11 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Indicab Driver',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFFC107)),
-        scaffoldBackgroundColor: const Color(0xFFF8F8F5),
-        useMaterial3: true,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       initialRoute: AppPages.initialRoute,
-      getPages: AppPages.routes, // This was missing
+      getPages: AppPages.routes,
     );
   }
 }

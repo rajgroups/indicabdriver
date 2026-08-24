@@ -7,6 +7,13 @@ import 'package:indicab_driver/layout/app.dart';
 import 'package:indicab_driver/models/ride_history_item.dart';
 import 'InvoiceScreen.dart';
 
+// ─── Rapido-style palette ────────────────────────────────────────────────────
+const _kNavy   = Color(0xFF1A1A2E);
+const _kGreen  = Color(0xFF00C853);
+const _kRed    = Color(0xFFE53935);
+const _kBg     = Color(0xFFF5F6FA);
+const _kBorder = Color(0xFFEEEFF3);
+const _kMuted  = Color(0xFFB0B3C1);
 
 class RideDetailsScreen extends StatelessWidget {
   const RideDetailsScreen({super.key});
@@ -26,15 +33,31 @@ class RideDetailsScreen extends StatelessWidget {
 
     if (bookingData == null && rideItem == null) {
       return AppScreen(
-        backgroundColor: AppColors.authBackground,
+        backgroundColor: _kBg,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Ride details unavailable'),
+              const Icon(Icons.error_outline_rounded, size: 48, color: _kMuted),
+              const SizedBox(height: 14),
+              const Text(
+                'Ride details unavailable',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: _kNavy,
+                ),
+              ),
               const SizedBox(height: 12),
-              TextButton(
+              ElevatedButton(
                 onPressed: Get.back,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kNavy,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: const Text('Back to History'),
               ),
             ],
@@ -60,252 +83,198 @@ class RideDetailsScreen extends StatelessWidget {
     final paymentMethod = bookingData?.bookingMode ?? rideItem?.paymentMethod ?? 'UPI / Cash';
 
     return AppScreen(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: _kBg,
       scrollable: true,
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+      padding: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              IconButton(
-                onPressed: Get.back,
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.surface,
-                  foregroundColor: AppColors.textPrimary,
-                ),
-                icon: const Icon(Icons.arrow_back_rounded),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ride Details',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Fare breakdown, route and trip summary',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          // ── Rapido-style top bar ──────────────────────────────────────
+          _RapidoBar(
+            title: 'Ride Details',
+            subtitle: 'Fare breakdown & trip summary',
           ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: AppColors.borderSoft),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 24,
-                  offset: Offset(0, 12),
-                ),
-              ],
-            ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: const Icon(
-                        Icons.directions_car_filled_rounded,
-                        color: AppColors.primaryDark,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            category,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            dateLabel,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      amountText,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
+                // ── Hero card: category + amount ─────────────────────
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: AppColors.inputFill,
-                    borderRadius: BorderRadius.circular(18),
+                    color: _kNavy,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _kNavy.withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.verified_rounded,
-                        color: Color(0xFF2A9D8F),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Trip completed successfully. Receipt available for download.',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                            height: 1.4,
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.directions_car_filled_rounded,
+                            color: Colors.white,
+                            size: 26,
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              category,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              dateLabel,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        amountText,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: _kGreen,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Trip route',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                const SizedBox(height: 14),
+
+                // Status pill
+                _StatusPill(status: status),
+                const SizedBox(height: 18),
+
+                // ── Route section ─────────────────────────────────────
+                _CardSection(
+                  title: 'Trip Route',
+                  child: _RouteRail(pickup: pickup, drop: drop),
+                ),
+                const SizedBox(height: 14),
+
+                // ── Ride summary ──────────────────────────────────────
+                _CardSection(
+                  title: 'Ride Summary',
+                  child: Column(
+                    children: [
+                      _InfoRow(label: 'Status', value: status.toUpperCase(), accent: _kGreen),
+                      const _InfoRow(label: 'Rating', value: '4.9 / 5 ⭐'),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 14),
-                _RouteTile(pickup: pickup, drop: drop),
+
+                // ── Driver & vehicle ──────────────────────────────────
+                _CardSection(
+                  title: 'Driver & Vehicle',
+                  child: Column(
+                    children: [
+                      _InfoRow(label: 'Driver', value: driverName),
+                      _InfoRow(label: 'Vehicle no.', value: vehicleNumber),
+                      _InfoRow(label: 'Booking ID', value: bookingId),
+                      _InfoRow(label: 'Payment', value: paymentMethod),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // ── Fare breakdown ────────────────────────────────────
+                _CardSection(
+                  title: 'Fare Breakdown',
+                  child: Column(
+                    children: [
+                      _InfoRow(
+                        label: 'Base fare',
+                        value: '₹${(amountValue * 0.70).toStringAsFixed(0)}',
+                      ),
+                      _InfoRow(
+                        label: 'Taxes and fees',
+                        value: '₹${(amountValue * 0.30).toStringAsFixed(0)}',
+                      ),
+                      _InfoRow(
+                        label: 'Total paid',
+                        value: amountText,
+                        accent: _kGreen,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // ── Action buttons ────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          final item = rideItem ?? (bookingData != null ? RideHistoryItem.fromBookingData(bookingData) : null);
+                          if (item != null) {
+                            Get.to(() => InvoiceScreen(ride: item));
+                          } else {
+                            Get.snackbar('Invoice', 'Invoice details unavailable.');
+                          }
+                        },
+                        icon: const Icon(Icons.download_rounded),
+                        label: const Text('Invoice'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _kNavy,
+                          side: const BorderSide(color: _kBorder),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => Get.offAllNamed(RouteNames.home),
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text(
+                          'Book Again',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _kNavy,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 18),
-          _InfoSection(
-            title: 'Ride summary',
-            children: [
-              _InfoRow(
-                label: 'Status',
-                value: status.toUpperCase(),
-                valueColor: const Color(0xFF2A9D8F),
-              ),
-              _InfoRow(
-                label: 'Rating',
-                value: '4.9 / 5',
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _InfoSection(
-            title: 'Driver and vehicle',
-            children: [
-              _InfoRow(label: 'Driver', value: driverName),
-              _InfoRow(label: 'Vehicle no.', value: vehicleNumber),
-              _InfoRow(label: 'Booking ID', value: bookingId),
-              _InfoRow(label: 'Payment', value: paymentMethod),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _InfoSection(
-            title: 'Fare breakdown',
-            children: [
-              _InfoRow(
-                label: 'Base fare',
-                value: '₹${(amountValue * 0.70).toStringAsFixed(0)}',
-              ),
-              _InfoRow(
-                label: 'Taxes and fees',
-                value: '₹${(amountValue * 0.30).toStringAsFixed(0)}',
-              ),
-              _InfoRow(
-                label: 'Total paid',
-                value: amountText,
-                emphasize: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    final item = rideItem ?? (bookingData != null ? RideHistoryItem.fromBookingData(bookingData) : null);
-                    if (item != null) {
-                      Get.to(() => InvoiceScreen(ride: item));
-                    } else {
-                      Get.snackbar('Invoice', 'Invoice details unavailable.');
-                    }
-                  },
-                  icon: const Icon(Icons.download_rounded),
-                  label: const Text('Invoice'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.border),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Get.offAllNamed(RouteNames.home);
-                  },
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text(
-                    'Book Again',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.textPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -313,43 +282,48 @@ class RideDetailsScreen extends StatelessWidget {
   }
 }
 
-class _RouteTile extends StatelessWidget {
-  const _RouteTile({required this.pickup, required this.drop});
+// ─── Sub-widgets ─────────────────────────────────────────────────────────────
 
-  final String pickup;
-  final String drop;
+class _RapidoBar extends StatelessWidget {
+  const _RapidoBar({required this.title, required this.subtitle});
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.fromLTRB(16, topPad + 10, 16, 14),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
-        borderRadius: BorderRadius.circular(22),
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2A9D8F),
-                  shape: BoxShape.circle,
+          Material(
+            color: const Color(0xFFF3F4F6),
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: Get.back,
+              customBorder: const CircleBorder(),
+              child: const SizedBox(
+                width: 42,
+                height: 42,
+                child: Center(
+                  child: Icon(Icons.arrow_back_ios_new_rounded,
+                      size: 16, color: _kNavy),
                 ),
               ),
-              Container(width: 2, height: 42, color: AppColors.border),
-              Container(
-                width: 10,
-                height: 10,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE76F51),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -357,20 +331,18 @@ class _RouteTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  pickup,
+                  title,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: _kNavy,
                   ),
                 ),
-                const SizedBox(height: 26),
                 Text(
-                  drop,
+                  subtitle,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    fontSize: 11,
+                    color: _kMuted,
                   ),
                 ),
               ],
@@ -382,21 +354,73 @@ class _RouteTile extends StatelessWidget {
   }
 }
 
-class _InfoSection extends StatelessWidget {
-  const _InfoSection({required this.title, required this.children});
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.status});
+  final String status;
 
+  @override
+  Widget build(BuildContext context) {
+    final isDone = status.toLowerCase() == 'completed' ||
+        status.toLowerCase() == 'success';
+    final pillBg = isDone ? _kGreen.withValues(alpha: 0.12) : _kRed.withValues(alpha: 0.12);
+    final textCol = isDone ? _kGreen : _kRed;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: pillBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: textCol.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isDone ? Icons.verified_rounded : Icons.info_outline_rounded,
+            color: textCol,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              isDone
+                  ? 'Trip completed successfully. Receipt available for download.'
+                  : 'Trip Status: ${status.toUpperCase()}',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: textCol,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardSection extends StatelessWidget {
+  const _CardSection({required this.title, required this.child});
   final String title;
-  final List<Widget> children;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.borderSoft),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _kBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,15 +428,77 @@ class _InfoSection extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: _kNavy,
+              letterSpacing: 0.2,
             ),
           ),
           const SizedBox(height: 14),
-          ...children,
+          child,
         ],
       ),
+    );
+  }
+}
+
+class _RouteRail extends StatelessWidget {
+  const _RouteRail({required this.pickup, required this.drop});
+  final String pickup;
+  final String drop;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: _kGreen,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Container(width: 2, height: 36, color: _kBorder),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: _kRed,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                pickup,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: _kNavy,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                drop,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: _kNavy,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -421,36 +507,30 @@ class _InfoRow extends StatelessWidget {
   const _InfoRow({
     required this.label,
     required this.value,
-    this.emphasize = false,
-    this.valueColor,
+    this.accent,
   });
 
   final String label;
   final String value;
-  final bool emphasize;
-  final Color? valueColor;
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-            ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: _kMuted),
           ),
           Text(
             value,
             style: TextStyle(
-              fontSize: emphasize ? 15 : 13,
-              fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
-              color: valueColor ?? AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: accent ?? _kNavy,
             ),
           ),
         ],

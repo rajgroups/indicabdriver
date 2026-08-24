@@ -8,6 +8,13 @@ import 'package:indicab_driver/layout/app.dart';
 import 'package:indicab_driver/controllers/HistoryController.dart';
 import 'RideHistoryFilter.dart';
 
+// ─── Rapido-style palette ────────────────────────────────────────────────────
+const _kNavy   = Color(0xFF1A1A2E);
+const _kGreen  = Color(0xFF00C853);
+const _kBg     = Color(0xFFF5F6FA);
+const _kBorder = Color(0xFFEEEFF3);
+const _kMuted  = Color(0xFFB0B3C1);
+const _kRed    = Color(0xFFE53935);
 
 class RideHistoryScreen extends StatefulWidget {
   const RideHistoryScreen({super.key});
@@ -91,7 +98,6 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   void _onBookingTap(BookingDataModel booking) {
     final status = booking.status?.trim().toLowerCase() ?? '';
 
-    // 1. Ongoing Rides -> Navigate to ActiveRideScreen or FindingDriverScreen
     if (status == 'accepted' || status == 'arrived' || status == 'started') {
       Get.offAllNamed(
         RouteNames.activeRide,
@@ -115,14 +121,13 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       return;
     }
 
-    // 2. Completed / Cancelled / Missed -> Ride Details
     Get.toNamed(RouteNames.rideDetails, arguments: booking);
   }
 
   @override
   Widget build(BuildContext context) {
     return AppScreen(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: _kBg,
       child: Column(
         children: [
           // Header
@@ -134,7 +139,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
 
           // Status Filter Tabs (All, Ongoing, Completed, Cancelled, Missed)
           Container(
-            color: AppColors.surface,
+            color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -150,19 +155,18 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: selected
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
+                              color: selected ? Colors.white : _kNavy,
                             ),
                           ),
                           selected: selected,
                           onSelected: (_) => _controller.changeStatusTab(tab),
-                          selectedColor: AppColors.primary,
-                          backgroundColor: AppColors.inputFill,
+                          selectedColor: _kNavy,
+                          backgroundColor: _kBg,
                           side: BorderSide(
-                            color: selected
-                                ? AppColors.primaryDark
-                                : AppColors.borderSoft,
+                            color: selected ? _kNavy : _kBorder,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       );
@@ -170,16 +174,16 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                   )),
             ),
           ),
-          const Divider(height: 1, color: AppColors.borderSoft),
+          const Divider(height: 1, color: _kBorder),
 
-          // Main List View with Pull To Refresh
+          // Main List View
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => _controller.fetchHistory(refresh: true),
-              color: AppColors.primaryDark,
+              color: _kNavy,
               child: Obx(() {
                 if (_controller.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator(color: _kNavy));
                 }
 
                 final bookingsList = _controller.bookings;
@@ -228,8 +232,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                               'Trips (${_controller.selectedStatusTab.value})',
                               style: const TextStyle(
                                 fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w800,
+                                color: _kNavy,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -237,7 +241,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                               'Tap any trip to view active tracking or trip summary.',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.textSecondary,
+                                color: _kMuted,
                               ),
                             ),
                           ],
@@ -261,10 +265,9 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                       );
                     }
 
-                    // Loading indicator for pagination
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: CircularProgressIndicator(color: _kNavy)),
                     );
                   },
                 );
@@ -293,18 +296,18 @@ class _HistoryHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
       decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.borderSoft)),
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: _kBorder)),
       ),
       child: Row(
         children: [
           IconButton(
             onPressed: onBack,
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.inputFill,
-              foregroundColor: AppColors.textPrimary,
+              backgroundColor: _kBg,
+              foregroundColor: _kNavy,
             ),
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           ),
           const SizedBox(width: 12),
           const Expanded(
@@ -315,8 +318,8 @@ class _HistoryHeader extends StatelessWidget {
                   'Ride History',
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    color: _kNavy,
                   ),
                 ),
                 SizedBox(height: 2),
@@ -324,7 +327,7 @@ class _HistoryHeader extends StatelessWidget {
                   'Your ongoing & past trips',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: _kMuted,
                   ),
                 ),
               ],
@@ -336,8 +339,8 @@ class _HistoryHeader extends StatelessWidget {
               IconButton(
                 onPressed: onOpenFilters,
                 style: IconButton.styleFrom(
-                  backgroundColor: AppColors.inputFill,
-                  foregroundColor: AppColors.textPrimary,
+                  backgroundColor: _kBg,
+                  foregroundColor: _kNavy,
                 ),
                 icon: const Icon(Icons.tune_rounded),
               ),
@@ -350,7 +353,7 @@ class _HistoryHeader extends StatelessWidget {
                     height: 20,
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(
-                      color: AppColors.primaryDark,
+                      color: _kGreen,
                       shape: BoxShape.circle,
                     ),
                     child: Text(
@@ -358,7 +361,7 @@ class _HistoryHeader extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.white,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -397,9 +400,9 @@ class _FilterSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.borderSoft),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,11 +411,11 @@ class _FilterSummaryCard extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  'Applied filters',
+                  'Applied Filters',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: _kNavy,
                   ),
                 ),
               ),
@@ -420,7 +423,7 @@ class _FilterSummaryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.18),
+                    color: _kGreen.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -428,7 +431,7 @@ class _FilterSummaryCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: _kGreen,
                     ),
                   ),
                 ),
@@ -457,7 +460,7 @@ class _FilterSummaryCard extends StatelessWidget {
                 icon: const Icon(Icons.restart_alt_rounded, size: 16),
                 label: const Text('Clear filters'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryDark,
+                  foregroundColor: _kRed,
                   padding: EdgeInsets.zero,
                 ),
               ),
@@ -485,21 +488,21 @@ class _AppliedFilterChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.14),
+        color: _kNavy.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryDark),
+        border: Border.all(color: _kBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.textSecondary),
+          Icon(icon, size: 14, color: _kMuted),
           const SizedBox(width: 6),
           Text(
             '$label: $value',
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: _kNavy,
             ),
           ),
         ],
@@ -519,9 +522,9 @@ class _EmptyFilterState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.borderSoft),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _kBorder),
       ),
       child: Column(
         children: [
@@ -529,12 +532,12 @@ class _EmptyFilterState extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: AppColors.inputFill,
+              color: _kBg,
               borderRadius: BorderRadius.circular(18),
             ),
             child: const Icon(
               Icons.filter_alt_off_rounded,
-              color: AppColors.textSecondary,
+              color: _kMuted,
             ),
           ),
           const SizedBox(height: 14),
@@ -542,8 +545,8 @@ class _EmptyFilterState extends StatelessWidget {
             'No trips found',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+              color: _kNavy,
             ),
           ),
           const SizedBox(height: 6),
@@ -552,12 +555,12 @@ class _EmptyFilterState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color: AppColors.textSecondary,
+              color: _kMuted,
               height: 1.4,
             ),
           ),
           const SizedBox(height: 14),
-          TextButton(onPressed: onReset, child: const Text('Reset filters')),
+          TextButton(onPressed: onReset, child: const Text('Reset filters', style: TextStyle(color: _kGreen, fontWeight: FontWeight.bold))),
         ],
       ),
     );
@@ -580,13 +583,15 @@ class _StatsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFF7D6), Color(0xFFFBE9A4)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.borderSoft),
+        color: _kNavy,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _kNavy.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -597,12 +602,14 @@ class _StatsCard extends StatelessWidget {
             child: _StatItem(
               value: '₹${totalSpent.toStringAsFixed(0)}',
               label: 'Total spent',
+              valueColor: _kGreen,
             ),
           ),
           Expanded(
             child: _StatItem(
               value: '${averageRating.toStringAsFixed(1)}★',
               label: 'Avg rating',
+              valueColor: Colors.amber,
             ),
           ),
         ],
@@ -612,10 +619,15 @@ class _StatsCard extends StatelessWidget {
 }
 
 class _StatItem extends StatelessWidget {
-  const _StatItem({required this.value, required this.label});
+  const _StatItem({
+    required this.value,
+    required this.label,
+    this.valueColor,
+  });
 
   final String value;
   final String label;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -623,17 +635,17 @@ class _StatItem extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w900,
+            color: valueColor ?? Colors.white,
           ),
         ),
         const SizedBox(height: 6),
         Text(
           label,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 12, color: Colors.white70),
         ),
       ],
     );
@@ -659,14 +671,11 @@ class _RideBookingCard extends StatelessWidget {
       case 'requested':
         return Colors.blue;
       case 'completed':
-        return Colors.green;
+        return _kGreen;
       case 'cancelled':
-        return Colors.red;
-      case 'expired':
-      case 'no_driver_available':
-        return Colors.orange;
+        return _kRed;
       default:
-        return AppColors.textSecondary;
+        return _kMuted;
     }
   }
 
@@ -686,9 +695,6 @@ class _RideBookingCard extends StatelessWidget {
         return 'Completed';
       case 'cancelled':
         return 'Cancelled';
-      case 'expired':
-      case 'no_driver_available':
-        return 'Missed (No Driver)';
       default:
         return status;
     }
@@ -712,24 +718,17 @@ class _RideBookingCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Ink(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(24),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _isOngoing ? AppColors.primaryDark : AppColors.borderSoft,
+              color: _isOngoing ? _kNavy : _kBorder,
               width: _isOngoing ? 1.5 : 1.0,
             ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x12000000),
-                blurRadius: 18,
-                offset: Offset(0, 10),
-              ),
-            ],
           ),
           child: Column(
             children: [
@@ -740,11 +739,11 @@ class _RideBookingCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: _statusColor.withValues(alpha: 0.14),
+                      color: _statusColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
-                      _isOngoing ? Icons.directions_car_filled_rounded : Icons.local_taxi_rounded,
+                      Icons.directions_car_filled_rounded,
                       color: _statusColor,
                     ),
                   ),
@@ -760,8 +759,8 @@ class _RideBookingCard extends StatelessWidget {
                                 category,
                                 style: const TextStyle(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                  color: _kNavy,
                                 ),
                               ),
                             ),
@@ -769,8 +768,8 @@ class _RideBookingCard extends StatelessWidget {
                               amount,
                               style: const TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w900,
+                                color: _kNavy,
                               ),
                             ),
                           ],
@@ -801,7 +800,7 @@ class _RideBookingCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textMuted,
+                                  color: _kMuted,
                                 ),
                               ),
                             ),
@@ -809,12 +808,6 @@ class _RideBookingCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    _isOngoing ? Icons.arrow_forward_ios_rounded : Icons.chevron_right_rounded,
-                    color: _isOngoing ? AppColors.primaryDark : AppColors.textMuted,
-                    size: _isOngoing ? 16 : 24,
                   ),
                 ],
               ),
@@ -828,16 +821,16 @@ class _RideBookingCard extends StatelessWidget {
                         width: 10,
                         height: 10,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF2A9D8F),
+                          color: _kGreen,
                           shape: BoxShape.circle,
                         ),
                       ),
-                      Container(width: 2, height: 34, color: AppColors.border),
+                      Container(width: 2, height: 34, color: _kBorder),
                       Container(
                         width: 10,
                         height: 10,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFE76F51),
+                          color: _kRed,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -855,7 +848,7 @@ class _RideBookingCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: _kNavy,
                           ),
                         ),
                         const SizedBox(height: 22),
@@ -866,7 +859,7 @@ class _RideBookingCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: _kNavy,
                           ),
                         ),
                       ],
@@ -874,26 +867,6 @@ class _RideBookingCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (_isOngoing) ...[
-                const SizedBox(height: 14),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'Tap to view live tracking →',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),

@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/constants/Strings.dart';
 import 'package:indicab_driver/controllers/HomeController.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/models/booking_response.dart';
 import 'package:indicab_driver/views/components/MapViewWidget.dart';
 import 'package:indicab_driver/views/components/ModernTraditionalZeroWalletCard.dart';
+
+// ─── Rapido-style palette ────────────────────────────────────────────────────
+const _kNavy   = Color(0xFF1A1A2E);
+const _kGreen  = Color(0xFF00C853);
+const _kRed    = Color(0xFFE53935);
+const _kBg     = Color(0xFFF5F6FA);
+const _kBorder = Color(0xFFEEEFF3);
+const _kMuted  = Color(0xFFB0B3C1);
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
@@ -17,10 +24,11 @@ class HomeView extends GetView<HomeController> {
     final sheetTopOffset = mediaQuery.size.height * 0.4;
 
     return Scaffold(
+      backgroundColor: _kBg,
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(
-            child: CircularProgressIndicator(color: AppColors.primaryDark),
+            child: CircularProgressIndicator(color: _kNavy),
           );
         }
         return Stack(
@@ -59,59 +67,68 @@ class HomeView extends GetView<HomeController> {
               maxChildSize: 0.85,
               builder:
                   (BuildContext context, ScrollController scrollController) {
-                    return Container(
-                      decoration: const BoxDecoration(
-                        color: AppColors.authBackground,
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(24),
-                        ),
+                return Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x0F000000),
+                        blurRadius: 16,
+                        offset: Offset(0, -4),
                       ),
-                      child: SingleChildScrollView(
-                        controller: scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _StatusCard(
-                              isOnline: controller.isOnline.value,
-                              onToggle: controller.toggleOnline,
-                            ),
-                            const SizedBox(height: 16),
-                            if (controller.walletBalance.value <= 0) ...[
-                              ModernTraditionalZeroWalletCard(
-                                onRecharge: controller.showRechargeDialog,
-                                balance: controller.walletBalance.value,
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-                            _EarningsCard(
-                              earnings: controller.todayEarnings.value,
-                              trips: controller.todayTrips.value,
-                              rating: controller.rating.value,
-                            ),
-                            const SizedBox(height: 16),
-                            _QuickActions(
-                              onSupport: () => Get.snackbar(
-                                'Support',
-                                'Contacting Indicab Support...',
-                                backgroundColor: Colors.white,
-                              ),
-                              onHistory: () =>
-                                  Get.toNamed(RouteNames.rideHistory),
-                              onEarnings: () =>
-                                  Get.toNamed(RouteNames.rideHistory),
-                            ),
-                            const SizedBox(height: 16),
-                            _RecentTrips(
-                              trips: controller.recentTrips,
-                              onSeeAll: () =>
-                                  Get.toNamed(RouteNames.rideHistory),
-                            ),
-                          ],
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildDragHandle(),
+                        const SizedBox(height: 12),
+                        _StatusCard(
+                          isOnline: controller.isOnline.value,
+                          onToggle: controller.toggleOnline,
                         ),
-                      ),
-                    );
-                  },
+                        const SizedBox(height: 16),
+                        if (controller.walletBalance.value <= 0) ...[
+                          ModernTraditionalZeroWalletCard(
+                            onRecharge: controller.showRechargeDialog,
+                            balance: controller.walletBalance.value,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        _EarningsCard(
+                          earnings: controller.todayEarnings.value,
+                          trips: controller.todayTrips.value,
+                          rating: controller.rating.value,
+                        ),
+                        const SizedBox(height: 16),
+                        _QuickActions(
+                          onSupport: () => Get.snackbar(
+                            'Support',
+                            'Contacting Indicab Support...',
+                            backgroundColor: Colors.white,
+                          ),
+                          onHistory: () =>
+                              Get.toNamed(RouteNames.rideHistory),
+                          onEarnings: () =>
+                              Get.toNamed(RouteNames.rideHistory),
+                        ),
+                        const SizedBox(height: 16),
+                        _RecentTrips(
+                          trips: controller.recentTrips,
+                          onSeeAll: () =>
+                              Get.toNamed(RouteNames.rideHistory),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
             if (controller.showIncomingRequest.value &&
                 controller.incomingRequest.value != null)
@@ -126,6 +143,19 @@ class HomeView extends GetView<HomeController> {
           ],
         );
       }),
+    );
+  }
+
+  Widget _buildDragHandle() {
+    return Center(
+      child: Container(
+        width: 40,
+        height: 5,
+        decoration: BoxDecoration(
+          color: _kBorder,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     );
   }
 }
@@ -160,16 +190,11 @@ class _TopBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFF3C4), Color(0xFFFFE08A), Color(0xFFF5B800)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: _kNavy,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE5B100), width: 1),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFF5B800).withValues(alpha: 0.18),
+              color: _kNavy.withValues(alpha: 0.18),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -208,16 +233,14 @@ class _TopBar extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF1B1B1B),
+                  color: Colors.white,
                 ),
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: isOnline
-                    ? const Color(0xFF167A3F)
-                    : const Color(0xFFB3261E),
+                color: isOnline ? _kGreen : _kRed,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -231,7 +254,7 @@ class _TopBar extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Material(
-              color: const Color(0xFFF6E7A4),
+              color: Colors.white12,
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 onTap: onSettings,
@@ -242,7 +265,7 @@ class _TopBar extends StatelessWidget {
                   alignment: Alignment.center,
                   child: const Icon(
                     Icons.settings_rounded,
-                    color: Color(0xFF1B1B1B),
+                    color: Colors.white,
                     size: 22,
                   ),
                 ),
@@ -276,7 +299,7 @@ void _showProfileSheet(HomeController controller) {
       return SafeArea(
         child: Container(
           decoration: const BoxDecoration(
-            color: Color(0xFFF8F3E6),
+            color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
@@ -287,7 +310,7 @@ void _showProfileSheet(HomeController controller) {
                 width: 46,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFB8A46A),
+                  color: _kBorder,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -299,9 +322,9 @@ void _showProfileSheet(HomeController controller) {
                     const Text(
                       'Profile & Settings',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF2A2417),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _kNavy,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -310,12 +333,10 @@ void _showProfileSheet(HomeController controller) {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: const Color(0xFFE8D9A8)),
+                        border: Border.all(color: _kBorder),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFFB88B1C,
-                            ).withValues(alpha: 0.08),
+                            color: _kNavy.withValues(alpha: 0.05),
                             blurRadius: 14,
                             offset: const Offset(0, 6),
                           ),
@@ -327,7 +348,7 @@ void _showProfileSheet(HomeController controller) {
                             width: 56,
                             height: 56,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF4E3B0),
+                              color: _kNavy.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(18),
                             ),
                             child: Center(
@@ -336,7 +357,7 @@ void _showProfileSheet(HomeController controller) {
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF7A5A12),
+                                  color: _kNavy,
                                 ),
                               ),
                             ),
@@ -351,7 +372,7 @@ void _showProfileSheet(HomeController controller) {
                                   style: const TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFF2A2417),
+                                    color: _kNavy,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -359,7 +380,8 @@ void _showProfileSheet(HomeController controller) {
                                   phone,
                                   style: const TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF6E5D35),
+                                    color: _kMuted,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -367,7 +389,8 @@ void _showProfileSheet(HomeController controller) {
                                   email,
                                   style: const TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF6E5D35),
+                                    color: _kMuted,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -400,8 +423,8 @@ void _showProfileSheet(HomeController controller) {
                     OutlinedButton.icon(
                       onPressed: controller.logout,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFB3261E),
-                        side: const BorderSide(color: Color(0xFFB3261E)),
+                        foregroundColor: _kRed,
+                        side: const BorderSide(color: _kRed),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -447,19 +470,19 @@ class _ProfileInfoTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE8D9A8)),
+        border: Border.all(color: _kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFF7A5A12), size: 20),
+          Icon(icon, color: _kNavy, size: 20),
           const SizedBox(height: 10),
           Text(
             label,
             style: const TextStyle(
               fontSize: 11,
-              color: Color(0xFF7A6A3E),
-              fontWeight: FontWeight.w600,
+              color: _kMuted,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 4),
@@ -469,8 +492,8 @@ class _ProfileInfoTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF2A2417),
-              fontWeight: FontWeight.w700,
+              color: _kNavy,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -507,10 +530,10 @@ class _MapControlButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFF0D77A), width: 1),
+              border: Border.all(color: _kBorder, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFF5B800).withValues(alpha: 0.18),
+                  color: _kNavy.withValues(alpha: 0.1),
                   blurRadius: 12,
                   offset: const Offset(0, 5),
                 ),
@@ -521,9 +544,9 @@ class _MapControlButton extends StatelessWidget {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: _kNavy),
                     )
-                  : Icon(icon, color: const Color(0xFF1B1B1B), size: 24),
+                  : Icon(icon, color: _kNavy, size: 24),
             ),
           ),
         ),
@@ -546,19 +569,11 @@ class _StatusCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isOnline
-              ? [const Color(0xFF1A8B4C), const Color(0xFF0F6B3A)]
-              : [const Color(0xFF6C6C6C), const Color(0xFF444444)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: isOnline ? _kGreen : _kNavy,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color:
-                (isOnline ? const Color(0xFF1A8B4C) : const Color(0xFF6C6C6C))
-                    .withValues(alpha: 0.3),
+            color: (isOnline ? _kGreen : _kNavy).withValues(alpha: 0.25),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -577,7 +592,7 @@ class _StatusCard extends StatelessWidget {
                       isOnline ? 'You\'re Online' : 'You\'re Offline',
                       style: const TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
                       ),
                     ),
@@ -587,6 +602,7 @@ class _StatusCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -611,9 +627,7 @@ class _StatusCard extends StatelessWidget {
                           width: 30,
                           height: 30,
                           decoration: BoxDecoration(
-                            color: isOnline
-                                ? const Color(0xFF1A8B4C)
-                                : const Color(0xFFCCCCCC),
+                            color: isOnline ? _kGreen : _kNavy,
                             borderRadius: BorderRadius.circular(15),
                             boxShadow: [
                               BoxShadow(
@@ -654,7 +668,7 @@ class _StatusCard extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -686,9 +700,10 @@ class _EarningsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -704,23 +719,23 @@ class _EarningsCard extends StatelessWidget {
                   'Today\'s Earnings',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
+                    color: _kMuted,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '₹${earnings.toStringAsFixed(2)}',
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.textPrimary,
+                    color: _kNavy,
                   ),
                 ),
               ],
             ),
           ),
-          Container(width: 1, height: 40, color: AppColors.borderSoft),
+          Container(width: 1, height: 40, color: _kBorder),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -729,23 +744,23 @@ class _EarningsCard extends StatelessWidget {
                   'Trips',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
+                    color: _kMuted,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '$trips',
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.textPrimary,
+                    color: _kNavy,
                   ),
                 ),
               ],
             ),
           ),
-          Container(width: 1, height: 40, color: AppColors.borderSoft),
+          Container(width: 1, height: 40, color: _kBorder),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -754,8 +769,8 @@ class _EarningsCard extends StatelessWidget {
                   'Rating',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
+                    color: _kMuted,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -767,9 +782,9 @@ class _EarningsCard extends StatelessWidget {
                     Text(
                       rating.toStringAsFixed(1),
                       style: const TextStyle(
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
+                        color: _kNavy,
                       ),
                     ),
                   ],
@@ -801,13 +816,7 @@ class _QuickActions extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -815,9 +824,9 @@ class _QuickActions extends StatelessWidget {
           const Text(
             'Quick Actions',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: _kNavy,
             ),
           ),
           const SizedBox(height: 12),
@@ -867,19 +876,20 @@ class _ActionButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.inputFill,
+            color: _kBg,
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kBorder),
           ),
           child: Column(
             children: [
-              Icon(icon, color: AppColors.primaryDark, size: 28),
+              Icon(icon, color: _kNavy, size: 28),
               const SizedBox(height: 6),
               Text(
                 label,
                 style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                  color: _kNavy,
                 ),
               ),
             ],
@@ -903,13 +913,7 @@ class _RecentTrips extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -920,9 +924,9 @@ class _RecentTrips extends StatelessWidget {
               const Text(
                 'Recent Trips',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: _kGreen,
                 ),
               ),
               TextButton(
@@ -936,8 +940,8 @@ class _RecentTrips extends StatelessWidget {
                   'See All',
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w700,
+                    color: _kGreen,
                   ),
                 ),
               ),
@@ -952,7 +956,7 @@ class _RecentTrips extends StatelessWidget {
                   'No recent trips yet',
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textSecondary,
+                    color: _kMuted,
                   ),
                 ),
               ),
@@ -962,7 +966,7 @@ class _RecentTrips extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: trips.length,
-              separatorBuilder: (context, index) => const Divider(height: 16),
+              separatorBuilder: (context, index) => const Divider(height: 16, color: _kBorder),
               itemBuilder: (context, index) {
                 final booking = trips[index];
                 return _TripItem(
@@ -1005,12 +1009,12 @@ class _TripItem extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
+              color: _kGreen.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
               Icons.route_rounded,
-              color: AppColors.primaryDark,
+              color: _kGreen,
               size: 20,
             ),
           ),
@@ -1024,7 +1028,7 @@ class _TripItem extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: _kNavy,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1034,7 +1038,7 @@ class _TripItem extends StatelessWidget {
                   time,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: _kMuted,
                   ),
                 ),
               ],
@@ -1046,7 +1050,7 @@ class _TripItem extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: _kNavy,
             ),
           ),
         ],
@@ -1093,313 +1097,311 @@ class _IncomingRideCard extends StatelessWidget {
       color: Colors.black.withValues(alpha: 0.68),
       child: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF23201C), Color(0xFF141210)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.28),
-                  width: 1.4,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    blurRadius: 30,
-                    offset: const Offset(0, 20),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(32),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 54,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
+          child: CustomScrollView(
+            shrinkWrap: true,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF23201C), Color(0xFF141210)],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(
+                          color: _kGreen.withValues(alpha: 0.28),
+                          width: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 54,
-                            height: 54,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: const Icon(
-                              Icons.local_taxi_rounded,
-                              color: AppColors.primary,
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(32),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Center(
+                                child: Container(
+                                  width: 54,
+                                  height: 5,
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(
-                                      alpha: 0.14,
-                                    ),
+                                    color: Colors.white.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: const Text(
-                                    'NEW RIDE REQUEST',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.8,
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 54,
+                                    height: 54,
+                                    decoration: BoxDecoration(
+                                      color: _kGreen.withValues(alpha: 0.16),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: const Icon(
+                                      Icons.local_taxi_rounded,
+                                      color: _kGreen,
+                                      size: 30,
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  bookingType,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w900,
-                                    height: 1.05,
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _kGreen.withValues(
+                                              alpha: 0.14,
+                                            ),
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                          child: const Text(
+                                            'NEW RIDE REQUEST',
+                                            style: TextStyle(
+                                              color: _kGreen,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 0.8,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          bookingType,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.05,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Booking #$bookingNo',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.72),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                  const SizedBox(width: 12),
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 54,
+                                        height: 54,
+                                        child: CircularProgressIndicator(
+                                          value: progress,
+                                          backgroundColor: Colors.white10,
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<Color>(
+                                                _kGreen,
+                                              ),
+                                          strokeWidth: 4,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${countdown}s',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 18),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _RideInfoTile(
+                                      label: 'Estimated fare',
+                                      value:
+                                          '₹${(booking.estimatedAmount ?? 0).toStringAsFixed(0)}',
+                                      icon: Icons.payments_rounded,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _RideInfoTile(
+                                      label: 'Passenger',
+                                      value: passengerName,
+                                      icon: Icons.person_rounded,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (vehicleLabel.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                _RideInfoTile(
+                                  label: 'Vehicle',
+                                  value: vehicleLabel,
+                                  icon: Icons.directions_car_rounded,
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Booking #$bookingNo',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.72),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
+                              ],
+                              if (scheduledAt != null && scheduledAt.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                _RideInfoTile(
+                                  label: 'Scheduled for',
+                                  value: scheduledAt,
+                                  icon: Icons.schedule_rounded,
+                                ),
+                              ],
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Route',
+                                      style: TextStyle(
+                                        color: Colors.white30,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _RouteTimeline(
+                                      pickup:
+                                          booking.pickupAddress ??
+                                          'Pickup address not available',
+                                      drop:
+                                          booking.dropAddress ??
+                                          'Drop address not available',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (notes != null && notes.isNotEmpty) ...[
+                                const SizedBox(height: 14),
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.04),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.06),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Notes',
+                                        style: TextStyle(
+                                          color: Colors.white30,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        notes,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          height: 1.4,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox(
-                                width: 54,
-                                height: 54,
-                                child: CircularProgressIndicator(
-                                  value: progress,
-                                  backgroundColor: Colors.white10,
-                                  valueColor:
-                                      const AlwaysStoppedAnimation<Color>(
-                                        AppColors.primary,
+                              const SizedBox(height: 18),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: OutlinedButton(
+                                      onPressed: onDecline,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.white70,
+                                        side: const BorderSide(color: Colors.white24),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(18),
+                                        ),
                                       ),
-                                  strokeWidth: 4,
-                                ),
-                              ),
-                              Text(
-                                '${countdown}s',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _RideInfoTile(
-                              label: 'Estimated fare',
-                              value:
-                                  '₹${(booking.estimatedAmount ?? 0).toStringAsFixed(0)}',
-                              icon: Icons.payments_rounded,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _RideInfoTile(
-                              label: 'Passenger',
-                              value: passengerName,
-                              icon: Icons.person_rounded,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (vehicleLabel.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        _RideInfoTile(
-                          label: 'Vehicle',
-                          value: vehicleLabel,
-                          icon: Icons.directions_car_rounded,
-                        ),
-                      ],
-                      if (scheduledAt != null && scheduledAt.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        _RideInfoTile(
-                          label: 'Scheduled for',
-                          value: scheduledAt,
-                          icon: Icons.schedule_rounded,
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Route',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.58),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _RouteTimeline(
-                              pickup:
-                                  booking.pickupAddress ??
-                                  'Pickup address not available',
-                              drop:
-                                  booking.dropAddress ??
-                                  'Drop address not available',
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (notes != null && notes.isNotEmpty) ...[
-                        const SizedBox(height: 14),
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.04),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.06),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Notes',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.58),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                notes,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  height: 1.4,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: OutlinedButton(
-                              onPressed: onDecline,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white70,
-                                side: const BorderSide(color: Colors.white24),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                              ),
-                              child: const Text(
-                                'Decline',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 3,
-                            child: ElevatedButton(
-                              onPressed: isAccepting ? null : onAccept,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                elevation: 5,
-                                shadowColor: AppColors.primary.withValues(
-                                  alpha: 0.3,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                              ),
-                              child: isAccepting
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.black,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Accept Ride',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w900,
+                                      child: const Text(
+                                        'Decline',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                            ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    flex: 3,
+                                    child: ElevatedButton(
+                                      onPressed: isAccepting ? null : onAccept,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: _kGreen,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(18),
+                                        ),
+                                      ),
+                                      child: isAccepting
+                                          ? const SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Accept Ride',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -1433,10 +1435,10 @@ class _RideInfoTile extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.14),
+              color: _kGreen.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
+            child: Icon(icon, color: _kGreen, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1448,7 +1450,7 @@ class _RideInfoTile extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.55),
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1459,7 +1461,7 @@ class _RideInfoTile extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ],
@@ -1486,7 +1488,7 @@ class _RouteTimeline extends StatelessWidget {
           children: [
             Column(
               children: [
-                const Icon(Icons.circle, color: AppColors.primary, size: 14),
+                const Icon(Icons.circle, color: _kGreen, size: 14),
                 Container(width: 1.5, height: 24, color: Colors.white24),
               ],
             ),
@@ -1510,7 +1512,7 @@ class _RouteTimeline extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1523,7 +1525,7 @@ class _RouteTimeline extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.location_on, color: Colors.redAccent, size: 14),
+            const Icon(Icons.location_on, color: _kRed, size: 14),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1544,7 +1546,7 @@ class _RouteTimeline extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

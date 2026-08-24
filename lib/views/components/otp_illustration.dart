@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/constants/Strings.dart';
 
-/// Top hero card for OTP screen integrating Brand Icon, Brand Name, Title, and Phone confirmation inside top banner.
+// ─── Rapido-style palette ────────────────────────────────────────────────────
+const _kNavy  = Color(0xFF1A1A2E);
+const _kGreen = Color(0xFF00C853);
+const _kAmber = Color(0xFFFFB300);
+
+/// Top hero card for OTP screen — Rapido partner app style with navy header.
 class OtpIllustration extends StatelessWidget {
   final String maskedMobile;
   final VoidCallback onEditMobile;
@@ -18,12 +23,12 @@ class OtpIllustration extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.borderSoft, width: 1.2),
+        border: Border.all(color: const Color(0xFFEEEFF3), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF5B800).withValues(alpha: 0.12),
+            color: _kNavy.withValues(alpha: 0.10),
             blurRadius: 22,
             spreadRadius: 0,
             offset: const Offset(0, 8),
@@ -41,7 +46,7 @@ class OtpIllustration extends StatelessWidget {
               ),
             ),
 
-            /// Foreground Content (Brand Name, Icon, Verification Title & Phone)
+            /// Foreground Content
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -58,15 +63,11 @@ class OtpIllustration extends StatelessWidget {
                             height: 36,
                             width: 36,
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFF5B800), Color(0xFFE6A700)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: _kNavy,
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFF5B800).withValues(alpha: 0.35),
+                                  color: _kNavy.withValues(alpha: 0.25),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
@@ -83,34 +84,32 @@ class OtpIllustration extends StatelessWidget {
                                     const Icon(
                                   Icons.local_taxi_rounded,
                                   size: 22,
-                                  color: Colors.black,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 AppStrings.appName,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.8,
-                                  color: AppColors.textPrimary,
-                                  fontFamily: 'SF Pro Text',
+                                  color: _kNavy,
                                   height: 1.1,
                                 ),
                               ),
-                              Text(
+                              const Text(
                                 "PARTNER",
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 1.5,
-                                  color: AppColors.primaryDark,
-                                  fontFamily: 'SF Pro Text',
+                                  color: _kGreen,
                                 ),
                               ),
                             ],
@@ -118,26 +117,28 @@ class OtpIllustration extends StatelessWidget {
                         ],
                       ),
 
-                      /// Driver OTP Status Chip
+                      /// Driver Verification Status Chip
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.15),
+                          color: _kGreen.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFFF5B800).withValues(alpha: 0.4),
+                            color: _kGreen.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.shield_rounded, size: 13, color: Color(0xFFB88400)),
-                            SizedBox(width: 4),
+                            Icon(Icons.shield_rounded,
+                                size: 13, color: _kGreen),
+                            const SizedBox(width: 4),
                             Text(
                               "Driver Verification",
                               style: TextStyle(
-                                color: Color(0xFFB88400),
+                                color: _kGreen,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -150,14 +151,13 @@ class OtpIllustration extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
-                  /// Title Inside Top Hero
+                  /// Title
                   const Text(
                     "Verify Driver OTP Code",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      fontFamily: 'SF Pro Display',
+                      color: _kNavy,
                       height: 1.2,
                       letterSpacing: -0.3,
                     ),
@@ -165,21 +165,18 @@ class OtpIllustration extends StatelessWidget {
 
                   const SizedBox(height: 4),
 
-                  /// Masked Phone Confirmation Subtitle with Responsive Gesture Edit Button
+                  /// Masked Phone + Edit Button
                   Row(
                     children: [
                       Expanded(
                         child: Text(
                           "Driver code sent to $maskedMobile",
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
-                            fontFamily: 'SF Pro Text',
+                            color: Color(0xFFB0B3C1),
                           ),
                         ),
                       ),
-
-                      /// Edit Mobile Button with Crisp Touch Gesture Recognition
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: onEditMobile,
@@ -189,28 +186,28 @@ class OtpIllustration extends StatelessWidget {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.18),
+                            color: _kNavy.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: const Color(0xFFF5B800).withValues(alpha: 0.4),
+                              color: _kNavy.withValues(alpha: 0.15),
                               width: 1,
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.edit_rounded,
                                 size: 12,
-                                color: AppColors.primaryDark,
+                                color: _kNavy,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 "Edit",
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.primaryDark,
+                                  color: _kNavy,
                                 ),
                               ),
                             ],
@@ -222,12 +219,12 @@ class OtpIllustration extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
-                  /// Feature Chips inside Top Hero
+                  /// Feature Chips
                   Row(
                     children: [
                       _OtpHeroBadgeChip(
                         icon: Icons.verified_user_rounded,
-                        iconColor: const Color(0xFF2E7D32),
+                        iconColor: _kGreen,
                         text: "Verified Driver",
                       ),
                       const SizedBox(width: 8),
@@ -264,10 +261,10 @@ class _OtpHeroBadgeChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.92),
+        color: Colors.white.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.border,
+          color: const Color(0xFFEEEFF3),
           width: 1,
         ),
         boxShadow: const [
@@ -286,7 +283,7 @@ class _OtpHeroBadgeChip extends StatelessWidget {
           Text(
             text,
             style: const TextStyle(
-              color: AppColors.textPrimary,
+              color: _kNavy,
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
@@ -297,18 +294,18 @@ class _OtpHeroBadgeChip extends StatelessWidget {
   }
 }
 
-/// Custom Vector Painter for top background graphics of OTP card
+/// Custom Vector Painter — Rapido-style navy & green accents
 class _OtpTopHeroVectorPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final width = size.width;
     final height = size.height;
 
-    // Ambient radial glow
+    // Ambient radial glow — subtle navy tint
     final bgGlowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFFFFF8E1).withValues(alpha: 0.7),
+          _kNavy.withValues(alpha: 0.04),
           const Color(0xFFFFFFFF),
         ],
         center: Alignment.topRight,
@@ -320,20 +317,20 @@ class _OtpTopHeroVectorPainter extends CustomPainter {
     final shieldCenterX = width * 0.85;
     final shieldCenterY = height * 0.55;
 
-    // Signal rings
+    // Signal rings — green pulse
     final pulseRing1 = Paint()
-      ..color = const Color(0xFFF5B800).withValues(alpha: 0.25)
+      ..color = _kGreen.withValues(alpha: 0.20)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     canvas.drawCircle(Offset(shieldCenterX, shieldCenterY), 38, pulseRing1);
 
     final pulseRing2 = Paint()
-      ..color = const Color(0xFFF5B800).withValues(alpha: 0.12)
+      ..color = _kGreen.withValues(alpha: 0.10)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     canvas.drawCircle(Offset(shieldCenterX, shieldCenterY), 54, pulseRing2);
 
-    // Small Gold Shield Graphic at bottom right inside top hero
+    // Shield Graphic — navy with green glow
     final shieldPath = Path();
     final sTop = shieldCenterY - 18;
     final sWidth = 32.0;
@@ -364,12 +361,25 @@ class _OtpTopHeroVectorPainter extends CustomPainter {
 
     final shieldGradientPaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFFFFD76A), Color(0xFFF5B800), Color(0xFFE6A700)],
+        colors: [Color(0xFF1A1A2E), Color(0xFF2D2D4E)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-      ).createShader(Rect.fromLTWH(shieldCenterX - sWidth / 2, sTop, sWidth, sHeight));
+      ).createShader(Rect.fromLTWH(
+          shieldCenterX - sWidth / 2, sTop, sWidth, sHeight));
 
     canvas.drawPath(shieldPath, shieldGradientPaint);
+
+    // Green check on shield
+    final checkPaint = Paint()
+      ..color = _kGreen
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    final checkPath = Path();
+    checkPath.moveTo(shieldCenterX - 6, shieldCenterY + 1);
+    checkPath.lineTo(shieldCenterX - 1, shieldCenterY + 6);
+    checkPath.lineTo(shieldCenterX + 8, shieldCenterY - 4);
+    canvas.drawPath(checkPath, checkPaint);
   }
 
   @override

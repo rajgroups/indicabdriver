@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:indicab_driver/constants/Colors.dart';
 
+// ─── Rapido-style palette ────────────────────────────────────────────────────
+const _kNavy   = Color(0xFF1A1A2E);
+const _kGreen  = Color(0xFF00C853);
+const _kBg     = Color(0xFFF5F6FA);
+const _kBorder = Color(0xFFEEEFF3);
+const _kMuted  = Color(0xFFB0B3C1);
 
 class RideHistoryFilterResult {
   const RideHistoryFilterResult({
@@ -97,284 +102,270 @@ class _RideHistoryFilterScreenState extends State<RideHistoryFilterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: AppColors.textPrimary),
-          onPressed: Get.back,
-        ),
-        centerTitle: true,
-        title: const Text(
-          'Filters',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _clearAll,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-            ),
-            child: const Text(
-              'Reset',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      backgroundColor: _kBg,
       body: Column(
         children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              physics: const BouncingScrollPhysics(),
+          // ── Rapido-style top bar ──────────────────────────────────────
+          Container(
+            padding: EdgeInsets.fromLTRB(16, topPad + 10, 16, 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
               children: [
-                _FilterGroup(
-                  title: 'Vehicle Type',
-                  icon: Icons.directions_car_rounded,
-                  options: widget.typeFilters,
-                  selectedValue: _selectedTypeFilter,
-                  onSelected: (value) =>
-                      setState(() => _selectedTypeFilter = value),
+                Material(
+                  color: const Color(0xFFF3F4F6),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: Get.back,
+                    customBorder: const CircleBorder(),
+                    child: const SizedBox(
+                      width: 42,
+                      height: 42,
+                      child: Center(
+                        child: Icon(Icons.close_rounded,
+                            size: 20, color: _kNavy),
+                      ),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 32),
-                _FilterGroup(
-                  title: 'Status',
-                  icon: Icons.data_usage_rounded,
-                  options: widget.statusFilters,
-                  selectedValue: _selectedStatusFilter,
-                  onSelected: (value) =>
-                      setState(() => _selectedStatusFilter = value),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Filter Trips',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: _kNavy,
+                        ),
+                      ),
+                      Text(
+                        'Refine your ride history list',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _kMuted,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 32),
-                _PriceRangeSection(
-                  range: _selectedPriceRange,
-                  onChanged: (value) =>
-                      setState(() => _selectedPriceRange = value),
-                ),
-                const SizedBox(height: 32),
-                _FilterGroup(
-                  title: 'Sort By',
-                  icon: Icons.sort_rounded,
-                  options: const [
-                    'Date: Newest',
-                    'Date: Oldest',
-                    'Price: High to Low',
-                    'Price: Low to High'
-                  ],
-                  selectedValue: _selectedSortBy,
-                  onSelected: (value) =>
-                      setState(() => _selectedSortBy = value),
-                ),
-                const SizedBox(height: 32),
-                _FilterGroup(
-                  title: 'Date Range',
-                  icon: Icons.calendar_month_rounded,
-                  options: widget.dateFilters,
-                  selectedValue: _selectedDateFilter,
-                  onSelected: (value) =>
-                      setState(() => _selectedDateFilter = value),
-                ),
-                const SizedBox(height: 32),
-                _FilterGroup(
-                  title: 'Payment Method',
-                  icon: Icons.account_balance_wallet_rounded,
-                  options: widget.paymentFilters,
-                  selectedValue: _selectedPaymentFilter,
-                  onSelected: (value) =>
-                      setState(() => _selectedPaymentFilter = value),
+                TextButton(
+                  onPressed: _clearAll,
+                  child: const Text(
+                    'Clear All',
+                    style: TextStyle(
+                      color: _kGreen,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: ElevatedButton(
-                onPressed: _applyFilters,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.textPrimary,
-                  foregroundColor: AppColors.surface,
-                  minimumSize: const Size(double.infinity, 56),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+
+          // ── Filter Body ───────────────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSection(
+                    title: 'Sort By',
+                    child: _buildChips(
+                      items: const ['Date: Newest', 'Date: Oldest', 'Price: High to Low', 'Price: Low to High'],
+                      selectedItem: _selectedSortBy,
+                      onSelected: (val) => setState(() => _selectedSortBy = val),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Show Results',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                ),
+                  const SizedBox(height: 14),
+                  _buildSection(
+                    title: 'Status',
+                    child: _buildChips(
+                      items: widget.statusFilters,
+                      selectedItem: _selectedStatusFilter,
+                      onSelected: (val) => setState(() => _selectedStatusFilter = val),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildSection(
+                    title: 'Time Period',
+                    child: _buildChips(
+                      items: widget.dateFilters,
+                      selectedItem: _selectedDateFilter,
+                      onSelected: (val) => setState(() => _selectedDateFilter = val),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildSection(
+                    title: 'Vehicle Type',
+                    child: _buildChips(
+                      items: widget.typeFilters,
+                      selectedItem: _selectedTypeFilter,
+                      onSelected: (val) => setState(() => _selectedTypeFilter = val),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildSection(
+                    title: 'Payment Mode',
+                    child: _buildChips(
+                      items: widget.paymentFilters,
+                      selectedItem: _selectedPaymentFilter,
+                      onSelected: (val) => setState(() => _selectedPaymentFilter = val),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildSection(
+                    title: 'Price Range',
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: _kBorder),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '₹${_selectedPriceRange.start.round()}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700, color: _kNavy),
+                              ),
+                              Text(
+                                '₹${_selectedPriceRange.end.round()}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700, color: _kNavy),
+                              ),
+                            ],
+                          ),
+                          RangeSlider(
+                            values: _selectedPriceRange,
+                            min: 0,
+                            max: 2000,
+                            divisions: 20,
+                            activeColor: _kGreen,
+                            inactiveColor: _kBorder,
+                            labels: RangeLabels(
+                              '₹${_selectedPriceRange.start.round()}',
+                              '₹${_selectedPriceRange.end.round()}',
+                            ),
+                            onChanged: (values) {
+                              setState(() {
+                                _selectedPriceRange = values;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FilterGroup extends StatelessWidget {
-  const _FilterGroup({
-    required this.title,
-    required this.icon,
-    required this.options,
-    required this.selectedValue,
-    required this.onSelected,
-  });
-
-  final String title;
-  final IconData icon;
-  final List<String> options;
-  final String selectedValue;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 20, color: AppColors.textPrimary),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: options.map((option) {
-            final isSelected = option == selectedValue;
-            return InkWell(
-              onTap: () => onSelected(option),
+        child: ElevatedButton(
+          onPressed: _applyFilters,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _kNavy,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color:
-                      isSelected ? AppColors.textPrimary : AppColors.inputFill,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.textPrimary
-                        : AppColors.borderSoft,
-                    width: 1,
-                  ),
-                ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isSelected) ...[
-                          const Icon(Icons.check_circle_rounded,
-                              size: 16, color: AppColors.surface),
-                          const SizedBox(width: 6),
-                        ],
-                        Text(
-                          option,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color:
-                                isSelected ? AppColors.surface : AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                ),
-              ),
-            );
-          }).toList(),
+            ),
+          ),
+          child: const Text(
+            'Apply Filters',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
         ),
-      ],
+      ),
     );
   }
-}
 
-class _PriceRangeSection extends StatelessWidget {
-  const _PriceRangeSection({required this.range, required this.onChanged});
-
-  final RangeValues range;
-  final ValueChanged<RangeValues> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSection({required String title, required Widget child}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.payments_rounded,
-                size: 20, color: AppColors.textPrimary),
-            const SizedBox(width: 8),
-            const Text(
-              'Price Range',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: _kNavy,
             ),
-            const Spacer(),
-            Text(
-              '₹${range.start.toInt()} - ₹${range.end.toInt()}',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryDark,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: AppColors.textPrimary,
-            inactiveTrackColor: AppColors.borderSoft,
-            thumbColor: AppColors.textPrimary,
-            overlayColor: AppColors.textPrimary.withValues(alpha: 0.1),
-            valueIndicatorTextStyle:
-                const TextStyle(color: AppColors.surface),
-          ),
-          child: RangeSlider(
-            values: range,
-            min: 0,
-            max: 2000,
-            divisions: 40,
-            labels: RangeLabels(
-                '₹${range.start.toInt()}', '₹${range.end.toInt()}'),
-            onChanged: onChanged,
           ),
         ),
+        child,
       ],
+    );
+  }
+
+  Widget _buildChips({
+    required List<String> items,
+    required String selectedItem,
+    required ValueChanged<String> onSelected,
+  }) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((item) {
+        final isSelected = selectedItem == item;
+        return ChoiceChip(
+          label: Text(item),
+          selected: isSelected,
+          onSelected: (_) => onSelected(item),
+          selectedColor: _kNavy,
+          backgroundColor: Colors.white,
+          labelStyle: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : _kNavy,
+          ),
+          side: BorderSide(
+            color: isSelected ? _kNavy : _kBorder,
+            width: 1,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        );
+      }).toList(),
     );
   }
 }

@@ -3,6 +3,12 @@ import 'package:get/get.dart';
 import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/controllers/RideController.dart';
 
+// ─── Rapido-style palette ────────────────────────────────────────────────────
+const _kNavy   = Color(0xFF1A1A2E);
+const _kGreen  = Color(0xFF00C853);
+const _kMuted  = Color(0xFFB0B3C1);
+const _kBorder = Color(0xFFEEEFF3);
+
 /// Floating bar showing ETA, distance, and estimated arrival time.
 class RideInfoBar extends GetView<RideController> {
   const RideInfoBar({super.key});
@@ -26,11 +32,12 @@ class RideInfoBar extends GetView<RideController> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: _kNavy.withValues(alpha: 0.1),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
           ],
+          border: Border.all(color: _kBorder),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -40,26 +47,26 @@ class RideInfoBar extends GetView<RideController> {
                 icon: Icons.access_time_rounded,
                 label: 'ETA',
                 value: duration,
-                color: AppColors.primaryDark,
+                color: _kNavy,
               ),
             if (duration.isNotEmpty && distance.isNotEmpty)
               Container(
                 width: 1,
                 height: 36,
-                color: AppColors.borderSoft,
+                color: _kBorder,
               ),
             if (distance.isNotEmpty)
               _InfoItem(
                 icon: Icons.straighten_rounded,
                 label: 'Distance',
                 value: distance,
-                color: const Color(0xFF1A8B4C),
+                color: _kGreen,
               ),
             if (arrival.isNotEmpty) ...[
               Container(
                 width: 1,
                 height: 36,
-                color: AppColors.borderSoft,
+                color: _kBorder,
               ),
               _InfoItem(
                 icon: Icons.schedule_rounded,
@@ -100,10 +107,10 @@ class _InfoItem extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textMuted,
+                fontWeight: FontWeight.w700,
+                color: _kMuted,
               ),
             ),
           ],
@@ -113,8 +120,8 @@ class _InfoItem extends StatelessWidget {
           value,
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w900,
+            color: _kNavy,
           ),
         ),
       ],

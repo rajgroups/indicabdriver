@@ -8,12 +8,21 @@ import 'package:indicab_driver/views/components/RideInfoBar.dart';
 import 'package:indicab_driver/views/components/DestinationReachedSheet.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+// ─── Rapido-style palette ────────────────────────────────────────────────────
+const _kNavy   = Color(0xFF1A1A2E);
+const _kGreen  = Color(0xFF00C853);
+const _kRed    = Color(0xFFE53935);
+const _kBg     = Color(0xFFF5F6FA);
+const _kBorder = Color(0xFFEEEFF3);
+const _kMuted  = Color(0xFFB0B3C1);
+
 class RideView extends GetView<RideController> {
   const RideView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _kBg,
       body: Obx(() {
         return Stack(
           children: [
@@ -27,13 +36,12 @@ class RideView extends GetView<RideController> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildCircleButton(Icons.arrow_back_rounded, () => Get.back()),
-                    // Show navigate button only when there's a destination to navigate to
+                    _buildCircleButton(Icons.arrow_back_ios_new_rounded, () => Get.back(), iconSize: 18),
                     if (_shouldShowNavigateButton())
                       _buildCircleButton(
                         Icons.navigation_rounded,
                         controller.launchGoogleNavigation,
-                        color: const Color(0xFF1A8B4C),
+                        color: _kNavy,
                         iconColor: Colors.white,
                       ),
                   ],
@@ -41,7 +49,7 @@ class RideView extends GetView<RideController> {
               ),
             ),
 
-            // ETA / Distance info bar (positioned above bottom sheet)
+            // ETA / Distance info bar
             Positioned(
               bottom: _getInfoBarBottomPosition(),
               left: 0,
@@ -81,7 +89,6 @@ class RideView extends GetView<RideController> {
   double _getInfoBarBottomPosition() {
     final status = controller.rideStatus.value;
     if (status == RideStatus.completed) return 0;
-    // Position above the bottom sheet
     return MediaQuery.of(Get.context!).size.height * 0.45 + 8;
   }
 
@@ -89,7 +96,8 @@ class RideView extends GetView<RideController> {
     IconData icon,
     VoidCallback onPressed, {
     Color color = Colors.white,
-    Color iconColor = AppColors.textPrimary,
+    Color iconColor = _kNavy,
+    double iconSize = 24,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -103,7 +111,7 @@ class RideView extends GetView<RideController> {
         ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: iconColor),
+        icon: Icon(icon, color: iconColor, size: iconSize),
         onPressed: onPressed,
       ),
     );
@@ -118,6 +126,7 @@ class RideView extends GetView<RideController> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: _kBorder),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -126,12 +135,12 @@ class RideView extends GetView<RideController> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A8B4C).withValues(alpha: 0.1),
+                  color: _kGreen.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_circle_rounded,
-                  color: Color(0xFF1A8B4C),
+                  color: _kGreen,
                   size: 48,
                 ),
               ),
@@ -140,8 +149,8 @@ class RideView extends GetView<RideController> {
                 'Reached Pickup!',
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                  color: _kNavy,
                 ),
               ),
               const SizedBox(height: 8),
@@ -149,7 +158,8 @@ class RideView extends GetView<RideController> {
                 'Waiting for passenger...',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: _kMuted,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -166,15 +176,16 @@ class RideView extends GetView<RideController> {
       maxChildSize: 0.8,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
-                color: Color(0x1A000000),
+                color: _kNavy.withValues(alpha: 0.1),
                 blurRadius: 20,
               ),
             ],
+            border: const Border(top: BorderSide(color: _kBorder)),
           ),
           child: Obx(() {
             return ListView(
@@ -184,9 +195,9 @@ class RideView extends GetView<RideController> {
                 _buildDragHandle(),
                 const SizedBox(height: 16),
                 _buildPassengerInfo(),
-                const Divider(height: 24),
+                const Divider(height: 24, color: _kBorder),
                 _buildRouteTimeline(),
-                const Divider(height: 24),
+                const Divider(height: 24, color: _kBorder),
                 switch (controller.rideStatus.value) {
                   RideStatus.accepted => _buildAcceptedSection(),
                   RideStatus.reached_pickup => _buildReachedPickupSection(),
@@ -208,7 +219,7 @@ class RideView extends GetView<RideController> {
         width: 40,
         height: 5,
         decoration: BoxDecoration(
-          color: AppColors.border,
+          color: _kBorder,
           borderRadius: BorderRadius.circular(12),
         ),
       ),
@@ -222,10 +233,14 @@ class RideView extends GetView<RideController> {
 
     return Row(
       children: [
-        const CircleAvatar(
-          radius: 28,
-          backgroundColor: AppColors.inputFill,
-          child: Icon(Icons.person_outline_rounded, size: 32, color: AppColors.textSecondary),
+        Container(
+          width: 56,
+          height: 56,
+          decoration: const BoxDecoration(
+            color: _kBg,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.person_outline_rounded, size: 32, color: _kNavy),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -236,8 +251,8 @@ class RideView extends GetView<RideController> {
                 name,
                 style: const TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                  color: _kNavy,
                 ),
               ),
               const SizedBox(height: 4),
@@ -247,15 +262,15 @@ class RideView extends GetView<RideController> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.15),
+                        color: _kGreen.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         category,
                         style: const TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w800,
+                          color: _kGreen,
                         ),
                       ),
                     ),
@@ -263,19 +278,19 @@ class RideView extends GetView<RideController> {
                   ],
                   const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
                   const SizedBox(width: 4),
-                  const Text('4.9', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const Text('4.9', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: _kNavy)),
                 ],
               ),
             ],
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.call, color: AppColors.primaryDark, size: 28),
+          icon: const Icon(Icons.call, color: _kGreen, size: 28),
           onPressed: controller.callPassenger,
         ),
         const SizedBox(width: 4),
         IconButton(
-          icon: const Icon(Icons.message_rounded, color: AppColors.primaryDark, size: 28),
+          icon: const Icon(Icons.message_rounded, color: _kNavy, size: 28),
           onPressed: () {
             Get.snackbar('Chat', 'Chat feature coming soon.');
           },
@@ -297,7 +312,7 @@ class RideView extends GetView<RideController> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.circle, color: AppColors.primaryDark, size: 16),
+            const Icon(Icons.circle, color: _kGreen, size: 16),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -307,8 +322,8 @@ class RideView extends GetView<RideController> {
                     isWork ? 'WORK LOCATION' : 'PICKUP ADDRESS',
                     style: const TextStyle(
                       fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w800,
+                      color: _kMuted,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -316,8 +331,8 @@ class RideView extends GetView<RideController> {
                     pickup,
                     style: const TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      color: _kNavy,
                     ),
                   ),
                 ],
@@ -325,13 +340,13 @@ class RideView extends GetView<RideController> {
             ),
           ],
         ),
-        // Drop-off (only in transport mode)
+        // Drop-off
         if (!isWork && drop != null) ...[
           const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.location_on_rounded, color: Colors.redAccent, size: 16),
+              const Icon(Icons.location_on_rounded, color: _kRed, size: 16),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -341,8 +356,8 @@ class RideView extends GetView<RideController> {
                       'DROP-OFF ADDRESS',
                       style: TextStyle(
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w800,
+                        color: _kMuted,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -350,8 +365,8 @@ class RideView extends GetView<RideController> {
                       drop,
                       style: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        color: _kNavy,
                       ),
                     ),
                   ],
@@ -360,12 +375,12 @@ class RideView extends GetView<RideController> {
             ],
           ),
         ],
-        // Duration info for work mode
+        // Duration
         if (isWork && b?.durationHours != null) ...[
           const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(Icons.timer_outlined, color: AppColors.primaryDark, size: 16),
+              const Icon(Icons.timer_outlined, color: _kNavy, size: 16),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,8 +389,8 @@ class RideView extends GetView<RideController> {
                     'SERVICE DURATION',
                     style: TextStyle(
                       fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w800,
+                      color: _kMuted,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -383,8 +398,8 @@ class RideView extends GetView<RideController> {
                     '${b!.durationHours!.toStringAsFixed(1)} hours',
                     style: const TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      color: _kNavy,
                     ),
                   ),
                 ],
@@ -396,36 +411,34 @@ class RideView extends GetView<RideController> {
     );
   }
 
-  // ─── Phase 1: Accepted (Heading to Pickup) ─────────────────────────
-
+  // Phase 1: Accepted (Heading to Pickup)
   Widget _buildAcceptedSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Status label
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.12),
+            color: _kNavy.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kNavy.withValues(alpha: 0.15)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.directions_car_rounded, color: AppColors.primaryDark, size: 20),
+              const Icon(Icons.directions_car_rounded, color: _kNavy, size: 20),
               const SizedBox(width: 8),
               Text(
                 controller.isWorkMode ? 'Heading to work location' : 'Heading to pickup',
                 style: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w700,
+                  color: _kNavy,
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 20),
-        // Reached Pickup button
         Obx(() => ElevatedButton.icon(
           icon: controller.isReachingPickup.value
               ? const SizedBox(
@@ -441,7 +454,7 @@ class RideView extends GetView<RideController> {
           ),
           onPressed: controller.isReachingPickup.value ? null : controller.reachedPickup,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1A8B4C),
+            backgroundColor: _kGreen,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -452,8 +465,7 @@ class RideView extends GetView<RideController> {
     );
   }
 
-  // ─── Phase 2: Reached Pickup (Waiting + OTP) ──────────────────────
-
+  // Phase 2: Reached Pickup (Waiting + OTP)
   Widget _buildReachedPickupSection() {
     final expectedOtpLength = controller.booking.value?.startOtp?.length ?? 6;
     final hintDashes = '-' * expectedOtpLength;
@@ -461,25 +473,27 @@ class RideView extends GetView<RideController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Status
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A8B4C).withValues(alpha: 0.12),
+            color: _kGreen.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kGreen.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF1A8B4C), size: 20),
+              const Icon(Icons.check_circle_rounded, color: _kGreen, size: 20),
               const SizedBox(width: 8),
-              Text(
-                controller.isWorkMode
-                    ? 'At work location — waiting for customer'
-                    : 'At pickup — waiting for passenger',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A8B4C),
+              Expanded(
+                child: Text(
+                  controller.isWorkMode
+                      ? 'At work location — waiting for customer'
+                      : 'At pickup — waiting for passenger',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: _kGreen,
+                  ),
                 ),
               ),
             ],
@@ -491,16 +505,17 @@ class RideView extends GetView<RideController> {
               ? 'Enter OTP from customer to start work'
               : 'Enter OTP from passenger to start ride',
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: const TextStyle(color: _kMuted, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: controller.otpController,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            letterSpacing: expectedOtpLength == 6 ? 8 : 12,
+            letterSpacing: 8,
+            color: _kNavy,
           ),
           keyboardType: TextInputType.number,
           maxLength: expectedOtpLength,
@@ -508,16 +523,20 @@ class RideView extends GetView<RideController> {
             counterText: '',
             hintText: hintDashes,
             hintStyle: TextStyle(
-              color: AppColors.border,
+              color: _kBorder,
               letterSpacing: expectedOtpLength == 6 ? 8 : 12,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: _kBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: _kBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _kNavy, width: 1.5),
             ),
           ),
         ),
@@ -527,7 +546,7 @@ class RideView extends GetView<RideController> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
               : const Icon(Icons.play_arrow_rounded),
           label: Text(
@@ -537,8 +556,8 @@ class RideView extends GetView<RideController> {
           ),
           onPressed: controller.isStartingRide.value ? null : controller.verifyOtpAndStartRide,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.black,
-            foregroundColor: AppColors.primary,
+            backgroundColor: _kNavy,
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -548,8 +567,7 @@ class RideView extends GetView<RideController> {
     );
   }
 
-  // ─── Phase 3: In Progress ─────────────────────────────────────────
-
+  // Phase 3: In Progress
   Widget _buildInProgressSection() {
     if (controller.isWorkMode) {
       return _buildWorkInProgressSection();
@@ -562,12 +580,12 @@ class RideView extends GetView<RideController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Status
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.blue.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
           ),
           child: const Row(
             children: [
@@ -577,7 +595,7 @@ class RideView extends GetView<RideController> {
                 'Ride in progress — heading to drop-off',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: Colors.blue,
                 ),
               ),
@@ -588,7 +606,7 @@ class RideView extends GetView<RideController> {
         const Text(
           'Enter End OTP from passenger to complete',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: _kMuted, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -598,20 +616,25 @@ class RideView extends GetView<RideController> {
             fontSize: 24,
             fontWeight: FontWeight.bold,
             letterSpacing: 8,
+            color: _kNavy,
           ),
           keyboardType: TextInputType.number,
           maxLength: 6,
           decoration: InputDecoration(
             counterText: '',
             hintText: '------',
-            hintStyle: const TextStyle(color: AppColors.border, letterSpacing: 8),
+            hintStyle: const TextStyle(color: _kBorder, letterSpacing: 8),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: _kBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: _kBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _kNavy, width: 1.5),
             ),
           ),
         ),
@@ -627,7 +650,7 @@ class RideView extends GetView<RideController> {
           label: Text(controller.isCompletingRide.value ? 'Completing...' : 'Complete Ride'),
           onPressed: controller.isCompletingRide.value ? null : controller.completeRide,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1A8B4C),
+            backgroundColor: _kGreen,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -642,12 +665,12 @@ class RideView extends GetView<RideController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Status
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.orange.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
           ),
           child: const Row(
             children: [
@@ -658,7 +681,7 @@ class RideView extends GetView<RideController> {
                   'Work in progress',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: Colors.orange,
                   ),
                 ),
@@ -668,31 +691,31 @@ class RideView extends GetView<RideController> {
         ),
         const SizedBox(height: 16),
 
-        // Work info
         if (controller.booking.value?.durationHours != null)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.inputFill,
+              color: _kBg,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _kBorder),
             ),
             child: Row(
               children: [
-                const Icon(Icons.timer_outlined, color: AppColors.primaryDark, size: 24),
+                const Icon(Icons.timer_outlined, color: _kNavy, size: 24),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Booked Duration',
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      style: TextStyle(fontSize: 12, color: _kMuted, fontWeight: FontWeight.w600),
                     ),
                     Text(
                       '${controller.booking.value!.durationHours!.toStringAsFixed(1)} hours',
                       style: const TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        color: _kNavy,
                       ),
                     ),
                   ],
@@ -705,7 +728,7 @@ class RideView extends GetView<RideController> {
         const Text(
           'Enter End OTP from customer to complete work',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: _kMuted, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -715,20 +738,25 @@ class RideView extends GetView<RideController> {
             fontSize: 24,
             fontWeight: FontWeight.bold,
             letterSpacing: 8,
+            color: _kNavy,
           ),
           keyboardType: TextInputType.number,
           maxLength: 6,
           decoration: InputDecoration(
             counterText: '',
             hintText: '------',
-            hintStyle: const TextStyle(color: AppColors.border, letterSpacing: 8),
+            hintStyle: const TextStyle(color: _kBorder, letterSpacing: 8),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: _kBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: _kBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _kNavy, width: 1.5),
             ),
           ),
         ),
@@ -744,7 +772,7 @@ class RideView extends GetView<RideController> {
           label: Text(controller.isCompletingRide.value ? 'Completing...' : 'Complete Work'),
           onPressed: controller.isCompletingRide.value ? null : controller.completeRide,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1A8B4C),
+            backgroundColor: _kGreen,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -755,8 +783,7 @@ class RideView extends GetView<RideController> {
     );
   }
 
-  // ─── Phase 4: Destination Reached (in-sheet fallback) ─────────────
-
+  // Phase 4: Destination Reached
   Widget _buildDestinationReachedSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -764,19 +791,20 @@ class RideView extends GetView<RideController> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A8B4C).withValues(alpha: 0.12),
+            color: _kGreen.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kGreen.withValues(alpha: 0.2)),
           ),
           child: const Row(
             children: [
-              Icon(Icons.place_rounded, color: Color(0xFF1A8B4C), size: 20),
+              Icon(Icons.place_rounded, color: _kGreen, size: 20),
               SizedBox(width: 8),
               Text(
                 'You\'ve arrived at the destination',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A8B4C),
+                  fontWeight: FontWeight.w700,
+                  color: _kGreen,
                 ),
               ),
             ],
@@ -786,26 +814,30 @@ class RideView extends GetView<RideController> {
         const Text(
           'Enter End OTP from passenger to complete',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: _kMuted, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: controller.endOtpController,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8, color: _kNavy),
           keyboardType: TextInputType.number,
           maxLength: 6,
           decoration: InputDecoration(
             counterText: '',
             hintText: '------',
-            hintStyle: const TextStyle(color: AppColors.border, letterSpacing: 8),
+            hintStyle: const TextStyle(color: _kBorder, letterSpacing: 8),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: _kBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: _kBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _kNavy, width: 1.5),
             ),
           ),
         ),
@@ -821,7 +853,7 @@ class RideView extends GetView<RideController> {
           label: Text(controller.isCompletingRide.value ? 'Completing...' : 'Complete Ride'),
           onPressed: controller.isCompletingRide.value ? null : controller.completeRide,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1A8B4C),
+            backgroundColor: _kGreen,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -832,8 +864,7 @@ class RideView extends GetView<RideController> {
     );
   }
 
-  // ─── Phase 5: Completed ───────────────────────────────────────────
-
+  // Phase 5: Completed
   Widget _buildCompletedSection() {
     final booking = controller.booking.value;
     final fare = booking?.finalAmount ?? booking?.estimatedAmount ?? 0.0;
@@ -841,23 +872,23 @@ class RideView extends GetView<RideController> {
 
     return Column(
       children: [
-        const Icon(Icons.check_circle_rounded, color: Color(0xFF1A8B4C), size: 60),
+        const Icon(Icons.check_circle_rounded, color: _kGreen, size: 60),
         const SizedBox(height: 16),
         Text(
           isWork ? 'Work Completed!' : 'Ride Completed!',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _kNavy),
         ),
         const SizedBox(height: 8),
         Text(
           'Total Fare: ₹${fare.toStringAsFixed(2)}',
-          style: const TextStyle(fontSize: 18, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 18, color: _kGreen, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: () => Get.offAllNamed(RouteNames.home),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.black,
-            foregroundColor: AppColors.primary,
+            backgroundColor: _kNavy,
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -867,8 +898,6 @@ class RideView extends GetView<RideController> {
     );
   }
 }
-
-// ─── Map Widget ──────────────────────────────────────────────────────
 
 class _RideMap extends GetView<RideController> {
   const _RideMap();
