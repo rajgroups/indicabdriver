@@ -6,6 +6,7 @@ import 'package:indicab_driver/controllers/HomeController.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/models/booking_response.dart';
 import 'package:indicab_driver/views/components/MapViewWidget.dart';
+import 'package:indicab_driver/views/components/ModernTraditionalZeroWalletCard.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
@@ -28,7 +29,7 @@ class HomeView extends GetView<HomeController> {
             SafeArea(
               child: _TopBar(
                 isOnline: controller.isOnline.value,
-                onLogout: controller.logout,
+                onSettings: () => _showProfileSheet(controller),
               ),
             ),
             Positioned(
@@ -36,7 +37,8 @@ class HomeView extends GetView<HomeController> {
               right: 16,
               child: _MapControlButton(
                 icon: Icons.explore_rounded,
-                onTap: () => controller.focusCurrentLocation(resetBearing: true),
+                onTap: () =>
+                    controller.focusCurrentLocation(resetBearing: true),
                 isLoading: controller.isLocating.value,
                 tooltip: 'Reset compass',
               ),
@@ -55,47 +57,64 @@ class HomeView extends GetView<HomeController> {
               initialChildSize: 0.4,
               minChildSize: 0.4,
               maxChildSize: 0.85,
-              builder: (BuildContext context, ScrollController scrollController) {
-                return Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.authBackground,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _StatusCard(
-                          isOnline: controller.isOnline.value,
-                          onToggle: controller.toggleOnline,
-                          walletBalance: controller.walletBalance.value,
-                          onRecharge: controller.showRechargeDialog,
+              builder:
+                  (BuildContext context, ScrollController scrollController) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.authBackground,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(24),
                         ),
-                        _EarningsCard(
-                          earnings: controller.todayEarnings.value,
-                          trips: controller.todayTrips.value,
-                          rating: controller.rating.value,
+                      ),
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _StatusCard(
+                              isOnline: controller.isOnline.value,
+                              onToggle: controller.toggleOnline,
+                            ),
+                            const SizedBox(height: 16),
+                            if (controller.walletBalance.value <= 0) ...[
+                              ModernTraditionalZeroWalletCard(
+                                onRecharge: controller.showRechargeDialog,
+                                balance: controller.walletBalance.value,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            _EarningsCard(
+                              earnings: controller.todayEarnings.value,
+                              trips: controller.todayTrips.value,
+                              rating: controller.rating.value,
+                            ),
+                            const SizedBox(height: 16),
+                            _QuickActions(
+                              onSupport: () => Get.snackbar(
+                                'Support',
+                                'Contacting Indicab Support...',
+                                backgroundColor: Colors.white,
+                              ),
+                              onHistory: () =>
+                                  Get.toNamed(RouteNames.rideHistory),
+                              onEarnings: () =>
+                                  Get.toNamed(RouteNames.rideHistory),
+                            ),
+                            const SizedBox(height: 16),
+                            _RecentTrips(
+                              trips: controller.recentTrips,
+                              onSeeAll: () =>
+                                  Get.toNamed(RouteNames.rideHistory),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        _QuickActions(
-                          onSupport: () => Get.snackbar('Support', 'Contacting Indicab Support...', backgroundColor: Colors.white),
-                          onHistory: () => Get.toNamed(RouteNames.rideHistory),
-                          onEarnings: () => Get.toNamed(RouteNames.rideHistory),
-                        ),
-                        const SizedBox(height: 16),
-                        _RecentTrips(
-                          trips: controller.recentTrips,
-                          onSeeAll: () => Get.toNamed(RouteNames.rideHistory),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                      ),
+                    );
+                  },
             ),
-            if (controller.showIncomingRequest.value && controller.incomingRequest.value != null)
+            if (controller.showIncomingRequest.value &&
+                controller.incomingRequest.value != null)
               _IncomingRideCard(
                 booking: controller.incomingRequest.value!,
                 countdown: controller.countdownSeconds.value,
@@ -129,13 +148,10 @@ class _DummyMap extends GetView<HomeController> {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({
-    required this.isOnline,
-    required this.onLogout,
-  });
+  const _TopBar({required this.isOnline, required this.onSettings});
 
   final bool isOnline;
-  final VoidCallback onLogout;
+  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -145,11 +161,7 @@ class _TopBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFFFFF3C4),
-              Color(0xFFFFE08A),
-              Color(0xFFF5B800),
-            ],
+            colors: [Color(0xFFFFF3C4), Color(0xFFFFE08A), Color(0xFFF5B800)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -171,7 +183,10 @@ class _TopBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  width: 1,
+                ),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(11),
@@ -200,7 +215,9 @@ class _TopBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: isOnline ? const Color(0xFF167A3F) : const Color(0xFFB3261E),
+                color: isOnline
+                    ? const Color(0xFF167A3F)
+                    : const Color(0xFFB3261E),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -213,14 +230,250 @@ class _TopBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            IconButton(
-              onPressed: onLogout,
-              icon: const Icon(Icons.logout_rounded, color: Color(0xFF1B1B1B), size: 22),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            )
+            Material(
+              color: const Color(0xFFF6E7A4),
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: onSettings,
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.settings_rounded,
+                    color: Color(0xFF1B1B1B),
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+void _showProfileSheet(HomeController controller) {
+  Get.bottomSheet(
+    Obx(() {
+      final driver = controller.currentDriver;
+      final name = driver?.name?.trim().isNotEmpty == true
+          ? driver!.name!.trim()
+          : 'Driver';
+      final phone = driver?.phone?.trim().isNotEmpty == true
+          ? driver!.phone!.trim()
+          : 'Not available';
+      final email = driver?.email?.trim().isNotEmpty == true
+          ? driver!.email!.trim()
+          : 'Not available';
+      final status = driver?.status?.trim().isNotEmpty == true
+          ? driver!.status!.trim()
+          : 'Active';
+      final balance = controller.walletBalance.value;
+
+      return SafeArea(
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF8F3E6),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 46,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB8A46A),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Profile & Settings',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF2A2417),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: const Color(0xFFE8D9A8)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFFB88B1C,
+                            ).withValues(alpha: 0.08),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF4E3B0),
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Center(
+                              child: Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : 'D',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF7A5A12),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF2A2417),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  phone,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF6E5D35),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  email,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF6E5D35),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ProfileInfoTile(
+                            label: 'Wallet',
+                            value: '₹${balance.toStringAsFixed(2)}',
+                            icon: Icons.account_balance_wallet_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ProfileInfoTile(
+                            label: 'Status',
+                            value: status,
+                            icon: Icons.verified_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    OutlinedButton.icon(
+                      onPressed: controller.logout,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFB3261E),
+                        side: const BorderSide(color: Color(0xFFB3261E)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: const Icon(Icons.logout_rounded, size: 20),
+                      label: const Text(
+                        'Logout',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }),
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+  );
+}
+
+class _ProfileInfoTile extends StatelessWidget {
+  const _ProfileInfoTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE8D9A8)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color(0xFF7A5A12), size: 20),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF7A6A3E),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF2A2417),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -270,11 +523,7 @@ class _MapControlButton extends StatelessWidget {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Icon(
-                      icon,
-                      color: const Color(0xFF1B1B1B),
-                      size: 24,
-                    ),
+                  : Icon(icon, color: const Color(0xFF1B1B1B), size: 24),
             ),
           ),
         ),
@@ -287,19 +536,13 @@ class _StatusCard extends StatelessWidget {
   const _StatusCard({
     required this.isOnline,
     required this.onToggle,
-    required this.walletBalance,
-    required this.onRecharge,
   });
 
   final bool isOnline;
   final VoidCallback onToggle;
-  final double walletBalance;
-  final VoidCallback onRecharge;
 
   @override
   Widget build(BuildContext context) {
-    final bool isZeroBalance = walletBalance <= 0;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -313,8 +556,9 @@ class _StatusCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (isOnline ? const Color(0xFF1A8B4C) : const Color(0xFF6C6C6C))
-                .withValues(alpha: 0.3),
+            color:
+                (isOnline ? const Color(0xFF1A8B4C) : const Color(0xFF6C6C6C))
+                    .withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -339,9 +583,7 @@ class _StatusCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isOnline
-                          ? 'Accepting ride requests'
-                          : 'Tap to go online',
+                      isOnline ? 'Accepting ride requests' : 'Tap to go online',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withValues(alpha: 0.8),
@@ -369,7 +611,9 @@ class _StatusCard extends StatelessWidget {
                           width: 30,
                           height: 30,
                           decoration: BoxDecoration(
-                            color: isOnline ? const Color(0xFF1A8B4C) : const Color(0xFFCCCCCC),
+                            color: isOnline
+                                ? const Color(0xFF1A8B4C)
+                                : const Color(0xFFCCCCCC),
                             borderRadius: BorderRadius.circular(15),
                             boxShadow: [
                               BoxShadow(
@@ -394,109 +638,29 @@ class _StatusCard extends StatelessWidget {
           ),
           if (isOnline) ...[
             const SizedBox(height: 16),
-            if (isZeroBalance) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFB3261E).withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFF8A80), width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.warning_amber_rounded,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'You will receive ride requests automatically',
+                      style: TextStyle(
                         color: Colors.white,
-                        size: 20,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '0 balance in your wallet',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Please recharge to continue receiving ride requests',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: onRecharge,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFFB3261E),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Recharge',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.white, size: 18),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'You will receive ride requests automatically',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ],
         ],
       ),
@@ -556,11 +720,7 @@ class _EarningsCard extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 1,
-            height: 40,
-            color: AppColors.borderSoft,
-          ),
+          Container(width: 1, height: 40, color: AppColors.borderSoft),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -585,11 +745,7 @@ class _EarningsCard extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 1,
-            height: 40,
-            color: AppColors.borderSoft,
-          ),
+          Container(width: 1, height: 40, color: AppColors.borderSoft),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -735,10 +891,7 @@ class _ActionButton extends StatelessWidget {
 }
 
 class _RecentTrips extends StatelessWidget {
-  const _RecentTrips({
-    required this.trips,
-    required this.onSeeAll,
-  });
+  const _RecentTrips({required this.trips, required this.onSeeAll});
 
   final List<BookingDataModel> trips;
   final VoidCallback onSeeAll;
@@ -797,7 +950,10 @@ class _RecentTrips extends StatelessWidget {
               child: Center(
                 child: Text(
                   'No recent trips yet',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             )
@@ -824,10 +980,7 @@ class _RecentTrips extends StatelessWidget {
 }
 
 class _TripItem extends StatelessWidget {
-  const _TripItem({
-    required this.booking,
-    required this.onTap,
-  });
+  const _TripItem({required this.booking, required this.onTap});
 
   final BookingDataModel booking;
   final VoidCallback onTap;
@@ -838,7 +991,9 @@ class _TripItem extends StatelessWidget {
     final drop = booking.dropAddress ?? 'Drop Address';
     final amount = booking.finalAmount != null && booking.finalAmount! > 0
         ? '₹${booking.finalAmount!.toStringAsFixed(0)}'
-        : (booking.estimatedAmount != null ? '₹${booking.estimatedAmount!.toStringAsFixed(0)}' : '₹0');
+        : (booking.estimatedAmount != null
+              ? '₹${booking.estimatedAmount!.toStringAsFixed(0)}'
+              : '₹0');
     final time = booking.scheduledAt ?? 'Recent';
 
     return InkWell(
@@ -900,7 +1055,6 @@ class _TripItem extends StatelessWidget {
   }
 }
 
-
 class _IncomingRideCard extends StatelessWidget {
   const _IncomingRideCard({
     required this.booking,
@@ -920,7 +1074,9 @@ class _IncomingRideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bookingType = booking.bookingMode == 'instant' ? 'Instant Booking' : 'Scheduled Booking';
+    final bookingType = booking.bookingMode == 'instant'
+        ? 'Instant Booking'
+        : 'Scheduled Booking';
     final bookingNo = booking.bookingNo ?? 'N/A';
     final passengerName = booking.passengerName ?? 'Passenger';
     final vehicleName = booking.vehicleName?.trim();
@@ -948,7 +1104,10 @@ class _IncomingRideCard extends StatelessWidget {
                   end: Alignment.bottomCenter,
                 ),
                 borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.28), width: 1.4),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.28),
+                  width: 1.4,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.35),
@@ -997,9 +1156,14 @@ class _IncomingRideCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.14),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.14,
+                                    ),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: const Text(
@@ -1044,7 +1208,10 @@ class _IncomingRideCard extends StatelessWidget {
                                 child: CircularProgressIndicator(
                                   value: progress,
                                   backgroundColor: Colors.white10,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        AppColors.primary,
+                                      ),
                                   strokeWidth: 4,
                                 ),
                               ),
@@ -1066,7 +1233,8 @@ class _IncomingRideCard extends StatelessWidget {
                           Expanded(
                             child: _RideInfoTile(
                               label: 'Estimated fare',
-                              value: '₹${(booking.estimatedAmount ?? 0).toStringAsFixed(0)}',
+                              value:
+                                  '₹${(booking.estimatedAmount ?? 0).toStringAsFixed(0)}',
                               icon: Icons.payments_rounded,
                             ),
                           ),
@@ -1116,8 +1284,12 @@ class _IncomingRideCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                             _RouteTimeline(
-                              pickup: booking.pickupAddress ?? 'Pickup address not available',
-                              drop: booking.dropAddress ?? 'Drop address not available',
+                              pickup:
+                                  booking.pickupAddress ??
+                                  'Pickup address not available',
+                              drop:
+                                  booking.dropAddress ??
+                                  'Drop address not available',
                             ),
                           ],
                         ),
@@ -1129,7 +1301,9 @@ class _IncomingRideCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.06),
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1166,12 +1340,19 @@ class _IncomingRideCard extends StatelessWidget {
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white70,
                                 side: const BorderSide(color: Colors.white24),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
                               ),
                               child: const Text(
                                 'Decline',
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -1183,10 +1364,16 @@ class _IncomingRideCard extends StatelessWidget {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 elevation: 5,
-                                shadowColor: AppColors.primary.withValues(alpha: 0.3),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                shadowColor: AppColors.primary.withValues(
+                                  alpha: 0.3,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
                               ),
                               child: isAccepting
                                   ? const SizedBox(
@@ -1199,7 +1386,10 @@ class _IncomingRideCard extends StatelessWidget {
                                     )
                                   : const Text(
                                       'Accept Ride',
-                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                     ),
                             ),
                           ),
@@ -1297,11 +1487,7 @@ class _RouteTimeline extends StatelessWidget {
             Column(
               children: [
                 const Icon(Icons.circle, color: AppColors.primary, size: 14),
-                Container(
-                  width: 1.5,
-                  height: 24,
-                  color: Colors.white24,
-                ),
+                Container(width: 1.5, height: 24, color: Colors.white24),
               ],
             ),
             const SizedBox(width: 12),

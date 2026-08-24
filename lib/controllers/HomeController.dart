@@ -26,8 +26,8 @@ class HomeController extends GetxController {
   HomeController({
     required HomeRepository repository,
     required BookingRepository bookingRepository,
-  })  : _repository = repository,
-        _bookingRepository = bookingRepository;
+  }) : _repository = repository,
+       _bookingRepository = bookingRepository;
 
   final HomeRepository _repository;
   final BookingRepository _bookingRepository;
@@ -43,7 +43,6 @@ class HomeController extends GetxController {
   final RxList<BookingDataModel> recentTrips = <BookingDataModel>[].obs;
   final RxBool isLocating = false.obs;
 
-
   // Incoming Booking request states
   final RxBool showIncomingRequest = false.obs;
   final Rxn<BookingDataModel> incomingRequest = Rxn<BookingDataModel>();
@@ -55,7 +54,6 @@ class HomeController extends GetxController {
   Worker? _pendingIncomingBookingWorker;
   Worker? _walletBalanceWorker;
   static const String _driverIdKey = 'driverId';
-  bool _walletBalanceWarningShown = false;
   bool _checkedActiveRide = false;
 
   // Map variables
@@ -64,6 +62,10 @@ class HomeController extends GetxController {
   final Rxn<double> heading = Rxn<double>();
   final RxSet<Marker> markers = <Marker>{}.obs;
   StreamSubscription<Position>? _locationSubscription;
+
+  DriverModel? get currentDriver => Get.isRegistered<SocketService>()
+      ? Get.find<SocketService>().currentDriver.value
+      : null;
 
   @override
   void onInit() {
@@ -75,7 +77,6 @@ class HomeController extends GetxController {
     _bindPendingIncomingBooking();
     _bindWalletBalanceUpdates();
     loadDashboard();
-    _showWalletBalanceWarningIfNeeded();
     _requestPermissionAndTrack();
     if (isOnline.value) {
       _connectSocket();
@@ -180,20 +181,27 @@ class HomeController extends GetxController {
 
   void _startTracking() {
     _locationSubscription?.cancel();
-    _locationSubscription = LocationHelper.getLocationStream().listen((position) {
-      final latLng = LatLng(position.latitude, position.longitude);
-      currentPosition.value = latLng;
-      heading.value = position.heading;
+    _locationSubscription = LocationHelper.getLocationStream().listen(
+      (position) {
+        final latLng = LatLng(position.latitude, position.longitude);
+        currentPosition.value = latLng;
+        heading.value = position.heading;
 
-      _sendLocationUpdateToSocket(position);
-      _updateDriverMarker(latLng, position.heading);
+        _sendLocationUpdateToSocket(position);
+        _updateDriverMarker(latLng, position.heading);
 
-      if (mapController != null) {
-        CameraHelper.animateToPosition(mapController, latLng, bearing: position.heading);
-      }
-    }, onError: (e) {
-      print("HomeController location stream error: $e");
-    });
+        if (mapController != null) {
+          CameraHelper.animateToPosition(
+            mapController,
+            latLng,
+            bearing: position.heading,
+          );
+        }
+      },
+      onError: (e) {
+        print("HomeController location stream error: $e");
+      },
+    );
   }
 
   void _stopTracking() {
@@ -211,7 +219,7 @@ class HomeController extends GetxController {
         icon: carIcon,
         anchor: const Offset(0.5, 0.5),
         flat: true,
-      )
+      ),
     });
   }
 
@@ -285,28 +293,6 @@ class HomeController extends GetxController {
     }
   }
 
-  void _showWalletBalanceWarningIfNeeded() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_walletBalanceWarningShown) {
-        return;
-      }
-
-      final socketService = Get.isRegistered<SocketService>()
-          ? Get.find<SocketService>()
-          : null;
-      final walletBalanceValue = socketService?.currentDriver.value?.walletBalance ??
-          StorageService().read(StorageKeys.walletBalance);
-      final currentBal = double.tryParse(walletBalanceValue?.toString() ?? '') ?? walletBalance.value;
-
-      if (currentBal > 0) {
-        return;
-      }
-
-      _walletBalanceWarningShown = true;
-      Helpers.warning('Wallet balance is 0.00. Please recharge to continue.');
-    });
-  }
-
   void _bindWalletBalanceUpdates() {
     if (!Get.isRegistered<SocketService>()) {
       return;
@@ -318,13 +304,14 @@ class HomeController extends GetxController {
         if (driver?.walletBalance != null) {
           walletBalance.value = driver!.walletBalance!;
         }
-        _showWalletBalanceWarningIfNeeded();
       },
     );
   }
 
   void showRechargeDialog() {
-    final TextEditingController amountController = TextEditingController(text: '500');
+    final TextEditingController amountController = TextEditingController(
+      text: '500',
+    );
     final RxDouble selectedAmount = 500.0.obs;
 
     Get.dialog(
@@ -353,10 +340,7 @@ class HomeController extends GetxController {
                   const SizedBox(width: 12),
                   const Text(
                     'Recharge Wallet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -370,28 +354,32 @@ class HomeController extends GetxController {
                 ),
               ),
               const SizedBox(height: 10),
-              Obx(() => Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [100.0, 200.0, 500.0, 1000.0].map((amt) {
-                  final isSelected = selectedAmount.value == amt;
-                  return ChoiceChip(
-                    label: Text('₹${amt.toInt()}'),
-                    selected: isSelected,
-                    selectedColor: const Color(0xFF167A3F),
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onSelected: (selected) {
-                      if (selected) {
-                        selectedAmount.value = amt;
-                        amountController.text = amt.toInt().toString();
-                      }
-                    },
-                  );
-                }).toList(),
-              )),
+              Obx(
+                () => Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [100.0, 200.0, 500.0, 1000.0].map((amt) {
+                    final isSelected = selectedAmount.value == amt;
+                    return ChoiceChip(
+                      label: Text('₹${amt.toInt()}'),
+                      selected: isSelected,
+                      selectedColor: const Color(0xFF167A3F),
+                      labelStyle: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) {
+                          selectedAmount.value = amt;
+                          amountController.text = amt.toInt().toString();
+                        }
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: amountController,
@@ -428,7 +416,9 @@ class HomeController extends GetxController {
                       ),
                     ),
                     onPressed: () {
-                      final amt = double.tryParse(amountController.text) ?? selectedAmount.value;
+                      final amt =
+                          double.tryParse(amountController.text) ??
+                          selectedAmount.value;
                       if (amt <= 0) {
                         Get.snackbar('Error', 'Please enter a valid amount');
                         return;
@@ -453,8 +443,13 @@ class HomeController extends GetxController {
       final response = await _repository.requestWalletRecharge(amount);
       Helpers.close();
 
-      final bool status = response['status'] == true;
-      final String message = response['message']?.toString() ??
+      final rawStatus = response['status'];
+      final bool status = rawStatus == true ||
+          rawStatus == 'success' ||
+          rawStatus == 'true' ||
+          rawStatus == 1;
+      final String message =
+          response['message']?.toString() ??
           'Recharge request submitted successfully. Pending admin approval.';
 
       if (status) {
@@ -584,7 +579,6 @@ class HomeController extends GetxController {
     }
   }
 
-
   Future<void> logout() async {
     _disconnectSocket();
     await _clearStoredSession();
@@ -664,10 +658,12 @@ class HomeController extends GetxController {
     final cancelledNo = bookingMap['booking_no']?.toString();
     final current = incomingRequest.value;
 
-    final idMatch = cancelledId != null &&
+    final idMatch =
+        cancelledId != null &&
         current?.id != null &&
         cancelledId.toString() == current!.id.toString();
-    final noMatch = cancelledNo != null &&
+    final noMatch =
+        cancelledNo != null &&
         cancelledNo.isNotEmpty &&
         cancelledNo == current?.bookingNo;
 
@@ -690,10 +686,12 @@ class HomeController extends GetxController {
     if (!showIncomingRequest.value) return;
 
     final current = incomingRequest.value;
-    final idMatch = bookingId != null &&
+    final idMatch =
+        bookingId != null &&
         current?.id != null &&
         bookingId.toString() == current!.id.toString();
-    final noMatch = bookingNo != null &&
+    final noMatch =
+        bookingNo != null &&
         bookingNo.isNotEmpty &&
         bookingNo == current?.bookingNo;
 
@@ -778,7 +776,10 @@ class HomeController extends GetxController {
 
       if (driverId == null) {
         isAccepting.value = false;
-        Get.snackbar('Error', 'Driver login data is missing. Please log in again.');
+        Get.snackbar(
+          'Error',
+          'Driver login data is missing. Please log in again.',
+        );
         await _handleMissingSession();
         return;
       }
@@ -818,7 +819,11 @@ class HomeController extends GetxController {
 
   void simulateIncomingRequest() {
     if (!isOnline.value) {
-      Get.snackbar('Offline', 'Please go online to receive requests.', backgroundColor: Colors.white);
+      Get.snackbar(
+        'Offline',
+        'Please go online to receive requests.',
+        backgroundColor: Colors.white,
+      );
       return;
     }
 

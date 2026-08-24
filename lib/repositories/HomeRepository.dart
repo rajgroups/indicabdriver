@@ -56,7 +56,8 @@ class HomeRepository {
     );
 
     final payload = response.data;
-    if (payload is Map<String, dynamic> && payload['status'] == true) {
+    if (payload is Map<String, dynamic> &&
+        (payload['status'] == true || payload['status'] == 'success')) {
       final data = payload['data'];
       if (data is Map<String, dynamic> && data['is_online'] != null) {
         return data['is_online'] as bool;
