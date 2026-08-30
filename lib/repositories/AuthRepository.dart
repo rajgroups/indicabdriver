@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:indicab_driver/network/client.dart';
 import 'package:indicab_driver/network/endpoints.dart';
 import 'package:indicab_driver/services/SecureStorageService.dart';
@@ -19,14 +20,27 @@ class AuthRepository {
         data: {'mobile': mobileNumber},
       );
 
-      final payload = response.data;
+      var payload = response.data;
+      if (payload is String) {
+        try {
+          payload = jsonDecode(payload);
+        } catch (_) {}
+      }
+
       if (payload is Map<String, dynamic> && (payload['status'] == true || payload['status'] == 'success')) {
-        final otp = payload['data']?['otp']?.toString();
+        final data = payload['data'];
+        final otp = (data is Map<String, dynamic>) ? data['otp']?.toString() : null;
         if (otp != null) {
           print('Backend generated OTP: $otp');
         }
       } else {
-        throw Exception(payload['message'] ?? 'Failed to send OTP.');
+        String errorMessage = 'Failed to send OTP.';
+        if (payload is Map<String, dynamic>) {
+          errorMessage = payload['message'] ?? errorMessage;
+        } else if (payload is String && payload.isNotEmpty) {
+          errorMessage = payload;
+        }
+        throw Exception(errorMessage);
       }
     } catch (e) {
       print('sendOtp error: $e');
@@ -53,7 +67,13 @@ class AuthRepository {
         data: requestData,
       );
 
-      final payload = response.data;
+      var payload = response.data;
+      if (payload is String) {
+        try {
+          payload = jsonDecode(payload);
+        } catch (_) {}
+      }
+
       if (payload is Map<String, dynamic> && (payload['status'] == true || payload['status'] == 'success')) {
         final data = payload['data'];
         if (data is Map<String, dynamic>) {

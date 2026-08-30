@@ -267,19 +267,9 @@ class _OtpViewState extends State<OtpView> {
                                           ),
                                           child: Ink(
                                             decoration: BoxDecoration(
-                                              gradient: controller.isLoading.value
-                                                  ? null
-                                                  : const LinearGradient(
-                                                      colors: [
-                                                        _kNavy,
-                                                        Color(0xFF2D2D4E),
-                                                      ],
-                                                      begin: Alignment.centerLeft,
-                                                      end: Alignment.centerRight,
-                                                    ),
                                               color: controller.isLoading.value
                                                   ? const Color(0xFFEEEFF3)
-                                                  : null,
+                                                  : _kNavy,
                                               borderRadius: BorderRadius.circular(
                                                 24,
                                               ),
