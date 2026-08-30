@@ -80,7 +80,9 @@ class RideDetailsScreen extends StatelessWidget {
     final driverName = bookingData?.driverName ?? rideItem?.driverName ?? 'Assigned Driver';
     final vehicleNumber = bookingData?.vehicleNumber ?? rideItem?.vehicleNumber ?? 'Vehicle N/A';
     final bookingId = bookingData?.bookingNo ?? rideItem?.bookingId ?? 'N/A';
-    final paymentMethod = bookingData?.bookingMode ?? rideItem?.paymentMethod ?? 'UPI / Cash';
+    final bookingModeLabel = (bookingData?.bookingMode ?? 'instant') == 'scheduled' ? 'Scheduled Ride' : 'Instant Ride';
+    final paymentMethod = bookingData?.paymentMethod ?? rideItem?.paymentMethod ?? 'Cash';
+    final scheduledAtText = bookingData?.scheduledAt;
 
     return AppScreen(
       backgroundColor: _kBg,
@@ -184,6 +186,9 @@ class RideDetailsScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       _InfoRow(label: 'Status', value: status.toUpperCase(), accent: _kGreen),
+                      _InfoRow(label: 'Booking Type', value: bookingModeLabel),
+                      if (scheduledAtText != null && scheduledAtText.isNotEmpty)
+                        _InfoRow(label: 'Scheduled For', value: scheduledAtText),
                       const _InfoRow(label: 'Rating', value: '4.9 / 5 ⭐'),
                     ],
                   ),
@@ -198,7 +203,7 @@ class RideDetailsScreen extends StatelessWidget {
                       _InfoRow(label: 'Driver', value: driverName),
                       _InfoRow(label: 'Vehicle no.', value: vehicleNumber),
                       _InfoRow(label: 'Booking ID', value: bookingId),
-                      _InfoRow(label: 'Payment', value: paymentMethod),
+                      _InfoRow(label: 'Payment', value: paymentMethod.toUpperCase()),
                     ],
                   ),
                 ),

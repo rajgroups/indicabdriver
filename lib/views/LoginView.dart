@@ -8,6 +8,11 @@ import 'package:indicab_driver/layout/app.dart';
 import 'package:indicab_driver/views/components/login_illustration.dart';
 import 'package:indicab_driver/views/components/social_button.dart';
 
+// ─── Rapido-style palette ────────────────────────────────────────────────────
+const _kNavy  = Color(0xFF1A1A2E);
+const _kGreen = Color(0xFF00C853);
+const _kBg    = Color(0xFFF5F6FA);
+
 class LoginView extends GetView<AuthController> {
   const LoginView({super.key});
 
@@ -21,7 +26,7 @@ class LoginView extends GetView<AuthController> {
   @override
   Widget build(BuildContext context) {
     return AppScreen(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: _kBg,
       resizeToAvoidBottomInset: true,
       child: SafeArea(
         child: LayoutBuilder(
@@ -49,17 +54,17 @@ class LoginView extends GetView<AuthController> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
-                                color: AppColors.borderSoft,
+                                color: const Color(0xFFEEEFF3),
                                 width: 1.2,
                               ),
-                              boxShadow: const [
+                              boxShadow: [
                                 BoxShadow(
-                                  color: Color(0x0C000000),
+                                  color: _kNavy.withValues(alpha: 0.06),
                                   blurRadius: 20,
-                                  offset: Offset(0, 8),
+                                  offset: const Offset(0, 8),
                                 ),
                               ],
                             ),
@@ -79,7 +84,7 @@ class LoginView extends GetView<AuthController> {
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w700,
-                                            color: AppColors.textPrimary,
+                                            color: _kNavy,
                                             fontFamily: 'SF Pro Text',
                                           ),
                                         ),
@@ -99,7 +104,7 @@ class LoginView extends GetView<AuthController> {
                                                         .only(right: 4),
                                                     child: const Icon(
                                                       Icons.check_circle_rounded,
-                                                      color: Color(0xFF00C853),
+                                                      color: _kGreen,
                                                       size: 14,
                                                     ),
                                                   ),
@@ -109,8 +114,8 @@ class LoginView extends GetView<AuthController> {
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w600,
                                                     color: isValid
-                                                        ? const Color(0xFF00C853)
-                                                        : AppColors.textMuted,
+                                                        ? _kGreen
+                                                        : const Color(0xFFB0B3C1),
                                                   ),
                                                 ),
                                               ],
@@ -124,10 +129,10 @@ class LoginView extends GetView<AuthController> {
                                     /// Phone Input Container
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: AppColors.inputFill,
+                                        color: const Color(0xFFF5F6FA),
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
-                                          color: AppColors.border,
+                                          color: const Color(0xFFEEEFF3),
                                           width: 1,
                                         ),
                                       ),
@@ -146,11 +151,11 @@ class LoginView extends GetView<AuthController> {
                                                 vertical: 6,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: AppColors.white,
+                                                color: Colors.white,
                                                 borderRadius:
                                                     BorderRadius.circular(12),
                                                 border: Border.all(
-                                                  color: AppColors.borderSoft,
+                                                  color: const Color(0xFFEEEFF3),
                                                   width: 1,
                                                 ),
                                               ),
@@ -163,8 +168,7 @@ class LoginView extends GetView<AuthController> {
                                                     Icons
                                                         .keyboard_arrow_down_rounded,
                                                     size: 16,
-                                                    color:
-                                                        AppColors.textSecondary,
+                                                    color: _kNavy,
                                                   ),
                                                   items: countryCodes.map((item) {
                                                     return DropdownMenuItem<
@@ -191,8 +195,7 @@ class LoginView extends GetView<AuthController> {
                                                               fontSize: 14,
                                                               fontWeight:
                                                                   FontWeight.w700,
-                                                              color: AppColors
-                                                                  .textPrimary,
+                                                              color: _kNavy,
                                                             ),
                                                           ),
                                                         ],
@@ -227,10 +230,9 @@ class LoginView extends GetView<AuthController> {
                                               ),
                                               decoration: InputDecoration(
                                                 hintText: "Enter 10-digit mobile",
-                                                hintStyle: TextStyle(
+                                                hintStyle: const TextStyle(
                                                   fontSize: 14,
-                                                  color: AppColors.textMuted
-                                                      .withValues(alpha: 0.7),
+                                                  color: Color(0xFFB0B3C1),
                                                   fontWeight: FontWeight.w400,
                                                   letterSpacing: 0,
                                                 ),
@@ -263,7 +265,7 @@ class LoginView extends GetView<AuthController> {
                                               return IconButton(
                                                 icon: const Icon(
                                                   Icons.cancel_rounded,
-                                                  color: AppColors.textMuted,
+                                                  color: Color(0xFFB0B3C1),
                                                   size: 18,
                                                 ),
                                                 onPressed: () => controller
@@ -302,15 +304,15 @@ class LoginView extends GetView<AuthController> {
                                                   ? null
                                                   : const LinearGradient(
                                                       colors: [
-                                                        Color(0xFFF5B800),
-                                                        Color(0xFFE6A700),
+                                                        _kNavy,
+                                                        Color(0xFF2D2D4E),
                                                       ],
                                                       begin: Alignment.centerLeft,
                                                       end:
                                                           Alignment.centerRight,
                                                     ),
                                               color: controller.isLoading.value
-                                                  ? AppColors.border
+                                                  ? const Color(0xFFEEEFF3)
                                                   : null,
                                               borderRadius: BorderRadius.circular(
                                                 24,
@@ -320,9 +322,8 @@ class LoginView extends GetView<AuthController> {
                                                   ? null
                                                   : [
                                                       BoxShadow(
-                                                        color: const Color(
-                                                          0xFFF5B800,
-                                                        ).withValues(alpha: 0.35),
+                                                        color: _kNavy
+                                                            .withValues(alpha: 0.30),
                                                         blurRadius: 12,
                                                         offset: const Offset(
                                                           0,
@@ -340,8 +341,7 @@ class LoginView extends GetView<AuthController> {
                                                       child:
                                                           CircularProgressIndicator(
                                                             strokeWidth: 2.2,
-                                                            color:
-                                                                AppColors.black,
+                                                            color: _kNavy,
                                                           ),
                                                     )
                                                   : const Row(
@@ -355,7 +355,7 @@ class LoginView extends GetView<AuthController> {
                                                             fontSize: 16,
                                                             fontWeight:
                                                                 FontWeight.w800,
-                                                            color: Colors.black,
+                                                            color: Colors.white,
                                                             letterSpacing: 0.3,
                                                           ),
                                                         ),
@@ -363,7 +363,7 @@ class LoginView extends GetView<AuthController> {
                                                         Icon(
                                                           Icons
                                                               .arrow_forward_rounded,
-                                                          color: Colors.black,
+                                                          color: Colors.white,
                                                           size: 18,
                                                         ),
                                                       ],
@@ -383,9 +383,9 @@ class LoginView extends GetView<AuthController> {
                                     /// OR Divider
                                     Row(
                                       children: [
-                                        Expanded(
+                                        const Expanded(
                                           child: Divider(
-                                            color: AppColors.border,
+                                            color: Color(0xFFEEEFF3),
                                             thickness: 1,
                                           ),
                                         ),
@@ -395,16 +395,16 @@ class LoginView extends GetView<AuthController> {
                                           ),
                                           child: Text(
                                             AppStrings.or,
-                                            style: TextStyle(
-                                              color: AppColors.textMuted,
+                                            style: const TextStyle(
+                                              color: Color(0xFFB0B3C1),
                                               fontWeight: FontWeight.w700,
                                               fontSize: 12,
                                             ),
                                           ),
                                         ),
-                                        Expanded(
+                                        const Expanded(
                                           child: Divider(
-                                            color: AppColors.border,
+                                            color: Color(0xFFEEEFF3),
                                             thickness: 1,
                                           ),
                                         ),
@@ -447,26 +447,26 @@ class LoginView extends GetView<AuthController> {
                                 text: "${AppStrings.agree_terms} ",
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  color: AppColors.textMuted,
+                                  color: Color(0xFFB0B3C1),
                                   height: 1.35,
                                 ),
                                 children: [
                                   TextSpan(
                                     text: AppStrings.terms,
-                                    style: TextStyle(
-                                      color: AppColors.primaryDark,
+                                    style: const TextStyle(
+                                      color: _kNavy,
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.underline,
                                     ),
                                   ),
                                   const TextSpan(
                                     text: " ${AppStrings.and_sign} ",
-                                    style: TextStyle(color: AppColors.textMuted),
+                                    style: TextStyle(color: Color(0xFFB0B3C1)),
                                   ),
                                   TextSpan(
                                     text: AppStrings.privacy,
-                                    style: TextStyle(
-                                      color: AppColors.primaryDark,
+                                    style: const TextStyle(
+                                      color: _kNavy,
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.underline,
                                     ),

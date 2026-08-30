@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
+import 'package:indicab_driver/config/Config.dart';
 import 'package:indicab_driver/constants/Keys.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/services/SecureStorageService.dart';
@@ -18,11 +19,7 @@ class ApiClient {
   ApiClient._internal(){
     _dio = Dio(
       BaseOptions(
-        // Live
-        // baseUrl: 'https://api.indicab.com',
-        
-        // Local
-        baseUrl: 'http://10.82.106.83:8000/api/driver',
+        baseUrl: AppEnv.apiBaseUrl,
 
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),

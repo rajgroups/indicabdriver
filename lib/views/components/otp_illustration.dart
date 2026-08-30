@@ -168,44 +168,39 @@ class OtpIllustration extends StatelessWidget {
                   /// Masked Phone + Edit Button
                   Row(
                     children: [
-                      Expanded(
-                        child: Text(
-                          "Driver code sent to $maskedMobile",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFFB0B3C1),
-                          ),
+                      Text(
+                        "Driver code sent to $maskedMobile",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFFB0B3C1),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: onEditMobile,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                            horizontal: 8,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
                             color: _kNavy.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _kNavy.withValues(alpha: 0.15),
-                              width: 1,
-                            ),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.edit_rounded,
-                                size: 12,
+                                size: 11,
                                 color: _kNavy,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 3),
                               Text(
                                 "Edit",
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: _kNavy,
                                 ),
@@ -309,7 +304,7 @@ class _OtpTopHeroVectorPainter extends CustomPainter {
           const Color(0xFFFFFFFF),
         ],
         center: Alignment.topRight,
-        radius: 1.1,
+        radius: 0,
       ).createShader(Rect.fromLTWH(0, 0, width, height));
 
     canvas.drawRect(Rect.fromLTWH(0, 0, width, height), bgGlowPaint);

@@ -53,6 +53,8 @@ class BookingDataModel {
     this.requiresDropLocation,
     this.durationHours,
     this.notes,
+    this.paymentMethod,
+    this.paymentStatus,
   });
 
   final int? id;
@@ -81,6 +83,8 @@ class BookingDataModel {
   final bool? requiresDropLocation;
   final double? durationHours;
   final String? notes;
+  final String? paymentMethod;
+  final String? paymentStatus;
 
   /// Whether this booking has a valid drop location (Transport Mode).
   /// If false, this is a Work Mode booking (e.g., tractor, JCB, crane).
@@ -103,6 +107,8 @@ class BookingDataModel {
       scheduledAt: json['scheduled_at']?.toString(),
       pickupAddress: json['pickup_address']?.toString(),
       dropAddress: json['drop_address']?.toString(),
+      paymentMethod: json['payment_method']?.toString(),
+      paymentStatus: json['payment_status']?.toString(),
       pickupLatitude: json['pickup_latitude'] != null
           ? double.tryParse(json['pickup_latitude'].toString())
           : _extractLocationCoord(json, 'pickup_location', 'latitude'),

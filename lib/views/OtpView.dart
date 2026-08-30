@@ -283,8 +283,7 @@ class _OtpViewState extends State<OtpView> {
                                               borderRadius: BorderRadius.circular(
                                                 24,
                                               ),
-                                              boxShadow: controller
-                                                      .isLoading.value
+                                              boxShadow: controller.isLoading.value
                                                   ? null
                                                   : [
                                                       BoxShadow(
@@ -315,9 +314,8 @@ class _OtpViewState extends State<OtpView> {
                                                           MainAxisAlignment
                                                               .center,
                                                       children: [
-                                                        Icon(
-                                                          Icons
-                                                              .verified_user_rounded,
+                                                        const Icon(
+                                                          Icons.verified_user_rounded,
                                                           color: _kGreen,
                                                           size: 18,
                                                         ),
