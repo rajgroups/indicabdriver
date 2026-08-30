@@ -8,6 +8,7 @@ class RouteNames {
   static const rideDetails = '/ride-details';
   static const activeRide = '/active-ride';
   static const findingDriver = '/finding-driver';
+  static const partnerEnquiry = '/partner-enquiry';
 }
 
 

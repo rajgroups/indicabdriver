@@ -17,6 +17,7 @@ class ApiEndpoints {
   static String bookingFare(dynamic id) => '/bookings/$id/fare';
   static const updateFcmToken = '/fcm-token';
   static const walletRechargeRequest = '/wallet/recharge-request';
+  static const partnerEnquiry = '/partner-enquiry';
 }
 
 

@@ -5,6 +5,7 @@ import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/constants/Strings.dart';
 import 'package:indicab_driver/controllers/AuthController.dart';
 import 'package:indicab_driver/layout/app.dart';
+import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/views/components/login_illustration.dart';
 import 'package:indicab_driver/views/components/social_button.dart';
 
@@ -474,6 +475,54 @@ class LoginView extends GetView<AuthController> {
                                 ],
                               ),
                               textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        /// Become a Partner CTA
+                        Center(
+                          child: GestureDetector(
+                            onTap: () => Get.toNamed(RouteNames.partnerEnquiry),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF8E1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFFFD54F),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.handshake_rounded,
+                                    size: 16,
+                                    color: const Color(0xFFB88400),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    "Become a Partner",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFFB88400),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 14,
+                                    color: Color(0xFFB88400),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
