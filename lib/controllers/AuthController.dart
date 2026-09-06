@@ -118,6 +118,7 @@ class AuthController extends GetxController {
       );
 
       if (success) {
+        await _syncFcmTokenAfterLogin();
         final secureToken = await SecureStorageService().read(StorageKeys.token);
         if (secureToken != null && secureToken.isNotEmpty && Get.isRegistered<SocketService>()) {
           Get.find<SocketService>().setToken(secureToken);
@@ -131,6 +132,23 @@ class AuthController extends GetxController {
       errorMessage.value = e.toString().replaceFirst('Exception: ', '');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _syncFcmTokenAfterLogin() async {
+    if (!Get.isRegistered<FirebaseService>()) {
+      return;
+    }
+
+    final firebaseService = Get.find<FirebaseService>();
+    var token = firebaseService.fcmToken.value;
+
+    if (token.isEmpty) {
+      token = await firebaseService.fetchFcmToken() ?? '';
+    }
+
+    if (token.isNotEmpty) {
+      await firebaseService.sendTokenToBackend(token);
     }
   }
 
