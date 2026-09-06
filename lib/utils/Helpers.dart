@@ -1,16 +1,20 @@
-import 'package:get/get_rx/src/rx_typedefs/rx_typedefs.dart';
+import 'package:flutter/material.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:get/get.dart';
 import 'package:indicab_driver/routes/names.dart';
 
 class Helpers {
 
-  static void success(String message,String? route,) {
+  static void success(String message, String? route, {VoidCallback? onConfirm}) {
     QuickAlert.show(
       context: Get.context!,
       type: QuickAlertType.success,
       text: message,
       onConfirmBtnTap: () async {
+        if (onConfirm != null) {
+          onConfirm();
+          return;
+        }
 
         /// CLOSE ALERT
         Get.back();

@@ -9,7 +9,7 @@ class AuthRepository {
   final ApiClient _apiClient = ApiClient();
   static const String _driverIdKey = 'driverId';
 
-  Future<void> sendOtp(String mobileNumber) async {
+  Future<String?> sendOtp(String mobileNumber) async {
     if (mobileNumber.trim().length < 10) {
       throw Exception('Enter a valid mobile number.');
     }
@@ -33,6 +33,7 @@ class AuthRepository {
         if (otp != null) {
           print('Backend generated OTP: $otp');
         }
+        return otp; // Return OTP so controller can show it
       } else {
         String errorMessage = 'Failed to send OTP.';
         if (payload is Map<String, dynamic>) {

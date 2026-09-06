@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/constants/Strings.dart';
 import 'package:indicab_driver/controllers/AuthController.dart';
 import 'package:indicab_driver/layout/app.dart';
@@ -10,9 +10,9 @@ import 'package:indicab_driver/views/components/login_illustration.dart';
 import 'package:indicab_driver/views/components/social_button.dart';
 
 // ─── Rapido-style palette ────────────────────────────────────────────────────
-const _kNavy  = Color(0xFF1A1A2E);
+const _kNavy = Color(0xFF1A1A2E);
 const _kGreen = Color(0xFF00C853);
-const _kBg    = Color(0xFFF5F6FA);
+const _kBg = Color(0xFFF5F6FA);
 
 class LoginView extends GetView<AuthController> {
   const LoginView({super.key});
@@ -35,9 +35,7 @@ class LoginView extends GetView<AuthController> {
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
                     padding: const EdgeInsets.all(18),
@@ -91,7 +89,9 @@ class LoginView extends GetView<AuthController> {
                                         ),
 
                                         /// Live Digit Validation Counter
-                                        ValueListenableBuilder<TextEditingValue>(
+                                        ValueListenableBuilder<
+                                          TextEditingValue
+                                        >(
                                           valueListenable:
                                               controller.mobileController,
                                           builder: (context, value, child) {
@@ -101,10 +101,13 @@ class LoginView extends GetView<AuthController> {
                                               children: [
                                                 if (isValid)
                                                   Container(
-                                                    margin: const EdgeInsets
-                                                        .only(right: 4),
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          right: 4,
+                                                        ),
                                                     child: const Icon(
-                                                      Icons.check_circle_rounded,
+                                                      Icons
+                                                          .check_circle_rounded,
                                                       color: _kGreen,
                                                       size: 14,
                                                     ),
@@ -116,7 +119,9 @@ class LoginView extends GetView<AuthController> {
                                                     fontWeight: FontWeight.w600,
                                                     color: isValid
                                                         ? _kGreen
-                                                        : const Color(0xFFB0B3C1),
+                                                        : const Color(
+                                                            0xFFB0B3C1,
+                                                          ),
                                                   ),
                                                 ),
                                               ],
@@ -148,22 +153,25 @@ class LoginView extends GetView<AuthController> {
                                             () => Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 6,
-                                              ),
+                                                    horizontal: 8,
+                                                    vertical: 6,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.white,
                                                 borderRadius:
                                                     BorderRadius.circular(12),
                                                 border: Border.all(
-                                                  color: const Color(0xFFEEEFF3),
+                                                  color: const Color(
+                                                    0xFFEEEFF3,
+                                                  ),
                                                   width: 1,
                                                 ),
                                               ),
                                               child: DropdownButtonHideUnderline(
                                                 child: DropdownButton<String>(
                                                   value: controller
-                                                      .selectedCountryCode.value,
+                                                      .selectedCountryCode
+                                                      .value,
                                                   isDense: true,
                                                   icon: const Icon(
                                                     Icons
@@ -171,9 +179,12 @@ class LoginView extends GetView<AuthController> {
                                                     size: 16,
                                                     color: _kNavy,
                                                   ),
-                                                  items: countryCodes.map((item) {
+                                                  items: countryCodes.map((
+                                                    item,
+                                                  ) {
                                                     return DropdownMenuItem<
-                                                        String>(
+                                                      String
+                                                    >(
                                                       value: item["code"],
                                                       child: Row(
                                                         mainAxisSize:
@@ -183,8 +194,8 @@ class LoginView extends GetView<AuthController> {
                                                             item["flag"]!,
                                                             style:
                                                                 const TextStyle(
-                                                              fontSize: 14,
-                                                            ),
+                                                                  fontSize: 14,
+                                                                ),
                                                           ),
                                                           const SizedBox(
                                                             width: 4,
@@ -193,11 +204,12 @@ class LoginView extends GetView<AuthController> {
                                                             item["code"]!,
                                                             style:
                                                                 const TextStyle(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight.w700,
-                                                              color: _kNavy,
-                                                            ),
+                                                                  fontSize: 14,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w700,
+                                                                  color: _kNavy,
+                                                                ),
                                                           ),
                                                         ],
                                                       ),
@@ -206,8 +218,9 @@ class LoginView extends GetView<AuthController> {
                                                   onChanged: (val) {
                                                     if (val != null) {
                                                       controller
-                                                          .selectedCountryCode
-                                                          .value = val;
+                                                              .selectedCountryCode
+                                                              .value =
+                                                          val;
                                                     }
                                                   },
                                                 ),
@@ -230,7 +243,8 @@ class LoginView extends GetView<AuthController> {
                                                 letterSpacing: 1.0,
                                               ),
                                               decoration: InputDecoration(
-                                                hintText: "Enter 10-digit mobile",
+                                                hintText:
+                                                    "Enter 10-digit mobile",
                                                 hintStyle: const TextStyle(
                                                   fontSize: 14,
                                                   color: Color(0xFFB0B3C1),
@@ -240,8 +254,8 @@ class LoginView extends GetView<AuthController> {
                                                 border: InputBorder.none,
                                                 contentPadding:
                                                     const EdgeInsets.symmetric(
-                                                  vertical: 12,
-                                                ),
+                                                      vertical: 12,
+                                                    ),
                                               ),
                                               inputFormatters: [
                                                 FilteringTextInputFormatter
@@ -301,30 +315,33 @@ class LoginView extends GetView<AuthController> {
                                           ),
                                           child: Ink(
                                             decoration: BoxDecoration(
-                                              gradient: controller.isLoading.value
+                                              gradient:
+                                                  controller.isLoading.value
                                                   ? null
                                                   : const LinearGradient(
                                                       colors: [
                                                         _kNavy,
                                                         Color(0xFF2D2D4E),
                                                       ],
-                                                      begin: Alignment.centerLeft,
+                                                      begin:
+                                                          Alignment.centerLeft,
                                                       end:
                                                           Alignment.centerRight,
                                                     ),
                                               color: controller.isLoading.value
                                                   ? const Color(0xFFEEEFF3)
                                                   : null,
-                                              borderRadius: BorderRadius.circular(
-                                                24,
-                                              ),
-                                              boxShadow: controller
-                                                      .isLoading.value
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                              boxShadow:
+                                                  controller.isLoading.value
                                                   ? null
                                                   : [
                                                       BoxShadow(
                                                         color: _kNavy
-                                                            .withValues(alpha: 0.30),
+                                                            .withValues(
+                                                              alpha: 0.30,
+                                                            ),
                                                         blurRadius: 12,
                                                         offset: const Offset(
                                                           0,
@@ -459,6 +476,14 @@ class LoginView extends GetView<AuthController> {
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.underline,
                                     ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () => Get.toNamed(
+                                        RouteNames.cmsPage,
+                                        arguments: {
+                                          'slug': 'terms-and-conditions',
+                                          'title': 'Terms & Conditions',
+                                        },
+                                      ),
                                   ),
                                   const TextSpan(
                                     text: " ${AppStrings.and_sign} ",
@@ -471,6 +496,14 @@ class LoginView extends GetView<AuthController> {
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.underline,
                                     ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () => Get.toNamed(
+                                        RouteNames.cmsPage,
+                                        arguments: {
+                                          'slug': 'privacy-policy',
+                                          'title': 'Privacy Policy',
+                                        },
+                                      ),
                                   ),
                                 ],
                               ),

@@ -33,6 +33,7 @@ class HomeRepository {
           'earnings': (data['today_earnings'] as num? ?? 0.0).toDouble(),
           'recentBookings': recentBookings,
           'wallet_balance': (data['wallet_balance'] as num?)?.toDouble() ?? 0.0,
+          'driver': data['driver'], // Extract driver object
         };
       }
     } catch (e) {

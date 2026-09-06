@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:indicab_driver/constants/Keys.dart';
@@ -80,12 +79,28 @@ class AuthController extends GetxController {
 
     isLoading.value = true;
     errorMessage.value = '';
+    Helpers.loading();
 
     try {
-      await _repository.sendOtp(mobile);
+      final otp = await _repository.sendOtp(mobile);
       otpSent.value = true;
-      Get.toNamed(RouteNames.otp);
+
+      Helpers.close(); // Close loading
+
+      // Build success message — show OTP code if backend returns it (test/dev env)
+      String successMessage = 'OTP sent successfully to ${selectedCountryCode.value} $mobile';
+      if (otp != null && otp.isNotEmpty) {
+        successMessage += '.\n\nYour OTP is: $otp';
+      }
+
+      Helpers.success(successMessage, null, onConfirm: () {
+        Get.back(); // Close alert
+        Future.delayed(const Duration(milliseconds: 200), () {
+          Get.toNamed(RouteNames.otp);
+        });
+      });
     } catch (e) {
+      Helpers.close();
       errorMessage.value = e.toString().replaceFirst('Exception: ', '');
       Helpers.error(errorMessage.value);
     } finally {
@@ -100,6 +115,7 @@ class AuthController extends GetxController {
   Future<void> verifyOtp() async {
     isLoading.value = true;
     errorMessage.value = '';
+    Helpers.loading();
 
     try {
       String? fcmToken;
@@ -117,6 +133,8 @@ class AuthController extends GetxController {
         fcmToken: fcmToken,
       );
 
+      Helpers.close();
+
       if (success) {
         await _syncFcmTokenAfterLogin();
         final secureToken = await SecureStorageService().read(StorageKeys.token);
@@ -124,12 +142,20 @@ class AuthController extends GetxController {
           Get.find<SocketService>().setToken(secureToken);
         }
         await _sendLocationUpdate();
-        Get.offAllNamed(RouteNames.home);
+        Helpers.success('Login successful! Welcome back.', null, onConfirm: () {
+          Get.back();
+          Future.delayed(const Duration(milliseconds: 200), () {
+            Get.offAllNamed(RouteNames.home);
+          });
+        });
       } else {
         errorMessage.value = 'Invalid OTP. Please try again.';
+        Helpers.error(errorMessage.value);
       }
     } catch (e) {
+      Helpers.close();
       errorMessage.value = e.toString().replaceFirst('Exception: ', '');
+      Helpers.error(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -204,13 +230,60 @@ class AuthController extends GetxController {
   }
 
   Future<void> logout() async {
+    // Show confirmation dialog before logging out
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: Color(0xFFE53935), size: 22),
+            SizedBox(width: 10),
+            Text(
+              'Logout',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to log out? You will stop receiving new ride requests.',
+          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(result: true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     isLoading.value = true;
+    Helpers.loading();
     try {
       await _clearStoredSession();
       _disconnectSocketIfAvailable();
       ApiClient().revokeTokens();
+      Helpers.close();
       Get.offAllNamed(RouteNames.login);
     } catch (e) {
+      Helpers.close();
       await _clearStoredSession();
       _disconnectSocketIfAvailable();
       Get.offAllNamed(RouteNames.login);

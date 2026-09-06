@@ -68,11 +68,15 @@ class RideDetailsScreen extends StatelessWidget {
 
     final category = bookingData?.categoryName ?? rideItem?.type ?? 'Ride';
     final amountText = bookingData != null
-        ? (bookingData.estimatedAmount != null
-            ? '₹${bookingData.estimatedAmount!.toStringAsFixed(2)}'
-            : '₹0.00')
-        : (rideItem?.amountLabel ?? '₹0.00');
-    final amountValue = bookingData?.estimatedAmount ?? rideItem?.amountValue ?? 0.0;
+        ? ((bookingData.finalAmount != null && bookingData.finalAmount! > 0)
+            ? '₹${bookingData.finalAmount!.toStringAsFixed(0)}'
+            : (bookingData.estimatedAmount != null
+                ? '₹${bookingData.estimatedAmount!.toStringAsFixed(0)}'
+                : '₹0'))
+        : (rideItem?.amountLabel ?? '₹0');
+    final amountValue = (bookingData?.finalAmount != null && bookingData!.finalAmount! > 0)
+        ? bookingData!.finalAmount!
+        : (bookingData?.estimatedAmount ?? rideItem?.amountValue ?? 0.0);
     final dateLabel = bookingData?.scheduledAt ?? rideItem?.dateLabel ?? 'Recent';
     final pickup = bookingData?.pickupAddress ?? rideItem?.pickup ?? 'Pickup Address';
     final drop = bookingData?.dropAddress ?? rideItem?.drop ?? 'Drop Address';

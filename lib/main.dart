@@ -6,6 +6,8 @@ import 'package:indicab_driver/routes/routes.dart';
 import 'package:indicab_driver/services/FirebaseService.dart';
 import 'package:indicab_driver/services/SocketService.dart';
 
+import 'package:indicab_driver/services/AppConfigService.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -13,6 +15,7 @@ Future<void> main() async {
   } catch (e) {
     print("Error loading .env file: $e");
   }
+  await Get.putAsync(() => AppConfigService().init(), permanent: true);
   await Get.putAsync(() => FirebaseService().init(), permanent: true);
   Get.put(SocketService(), permanent: true);
   runApp(const MyApp());

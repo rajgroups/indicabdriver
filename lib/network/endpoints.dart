@@ -18,6 +18,7 @@ class ApiEndpoints {
   static const updateFcmToken = '/fcm-token';
   static const walletRechargeRequest = '/wallet/recharge-request';
   static const partnerEnquiry = '/partner-enquiry';
+  static const updateLocation = '/location';
 }
 
 

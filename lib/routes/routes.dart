@@ -12,6 +12,8 @@ import 'package:indicab_driver/views/SplashView.dart';
 
 import 'package:indicab_driver/views/RideHistory.dart';
 import 'package:indicab_driver/views/RideDetails.dart';
+import 'package:indicab_driver/modules/cms/views/cms_view.dart' as indicab_cms;
+import 'package:indicab_driver/modules/cms/bindings/cms_binding.dart' as indicab_cms_binding;
 
 class AppPages {
   static const initialRoute = RouteNames.splash;
@@ -49,6 +51,11 @@ class AppPages {
     GetPage(
       name: RouteNames.partnerEnquiry,
       page: () => const PartnerEnquiryView(),
+    ),
+    GetPage(
+      name: RouteNames.cmsPage,
+      page: () => const indicab_cms.CmsView(),
+      binding: indicab_cms_binding.CmsBinding(),
     ),
   ];
 }

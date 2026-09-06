@@ -867,7 +867,9 @@ class RideView extends GetView<RideController> {
   // Phase 5: Completed
   Widget _buildCompletedSection() {
     final booking = controller.booking.value;
-    final fare = booking?.finalAmount ?? booking?.estimatedAmount ?? 0.0;
+    final fare = (booking?.finalAmount != null && booking!.finalAmount! > 0)
+        ? booking!.finalAmount!
+        : (booking?.estimatedAmount ?? 0.0);
     final isWork = controller.isWorkMode;
 
     return Column(
@@ -880,7 +882,7 @@ class RideView extends GetView<RideController> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Total Fare: ₹${fare.toStringAsFixed(2)}',
+          'Total Fare: ₹${fare.toStringAsFixed(0)}',
           style: const TextStyle(fontSize: 18, color: _kGreen, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 24),

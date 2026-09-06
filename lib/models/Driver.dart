@@ -1,3 +1,39 @@
+class DriverVehicleModel {
+  final int? id;
+  final String? registrationNumber;
+  final String? color;
+  final String? status;
+  final String? typeName;
+
+  DriverVehicleModel({
+    this.id,
+    this.registrationNumber,
+    this.color,
+    this.status,
+    this.typeName,
+  });
+
+  factory DriverVehicleModel.fromJson(Map<String, dynamic> json) {
+    return DriverVehicleModel(
+      id: json['id'] is num ? (json['id'] as num).toInt() : int.tryParse(json['id']?.toString() ?? ''),
+      registrationNumber: json['registration_number'],
+      color: json['color'],
+      status: json['status'],
+      typeName: json['type_name'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'registration_number': registrationNumber,
+      'color': color,
+      'status': status,
+      'type_name': typeName,
+    };
+  }
+}
+
 class DriverModel {
   final int? id;
   final String? name;
@@ -27,6 +63,7 @@ class DriverModel {
   final String? medicalCertificate;
   final String? remarks;
   final double? walletBalance;
+  final DriverVehicleModel? vehicle;
 
   DriverModel({
     this.id,
@@ -57,6 +94,7 @@ class DriverModel {
     this.medicalCertificate,
     this.remarks,
     this.walletBalance,
+    this.vehicle,
   });
 
   factory DriverModel.fromJson(Map<String, dynamic> json) {
@@ -90,6 +128,7 @@ class DriverModel {
       remarks: json['remarks'],
       walletBalance: (json['wallet_balance'] as num?)?.toDouble() ??
           double.tryParse(json['wallet_balance']?.toString() ?? ''),
+      vehicle: json['vehicle'] != null ? DriverVehicleModel.fromJson(json['vehicle']) : null,
     );
   }
 
@@ -123,6 +162,7 @@ class DriverModel {
       'medical_certificate': medicalCertificate,
       'remarks': remarks,
       'wallet_balance': walletBalance,
+      'vehicle': vehicle?.toJson(),
     };
   }
 }

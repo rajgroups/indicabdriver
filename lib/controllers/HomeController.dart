@@ -10,8 +10,10 @@ import 'package:indicab_driver/repository/BookingRepository.dart';
 import 'package:indicab_driver/routes/names.dart';
 import 'package:indicab_driver/services/FirebaseService.dart';
 import 'package:indicab_driver/services/SocketService.dart';
+import 'package:indicab_driver/services/AppConfigService.dart';
 import 'package:indicab_driver/services/SecureStorageService.dart';
 import 'package:indicab_driver/services/StorageService.dart';
+import 'package:indicab_driver/network/endpoints.dart';
 import 'package:indicab_driver/constants/Keys.dart';
 import 'package:indicab_driver/constants/Colors.dart';
 import 'package:indicab_driver/models/booking_response.dart';
@@ -42,6 +44,7 @@ class HomeController extends GetxController {
   final RxDouble walletBalance = 0.0.obs;
   final RxList<BookingDataModel> recentTrips = <BookingDataModel>[].obs;
   final RxBool isLocating = false.obs;
+  final RxBool showMapView = false.obs; // Map hidden by default to save API costs
 
   // Incoming Booking request states
   final RxBool showIncomingRequest = false.obs;
@@ -187,7 +190,7 @@ class HomeController extends GetxController {
         currentPosition.value = latLng;
         heading.value = position.heading;
 
-        _sendLocationUpdateToSocket(position);
+        _sendLocationUpdate(position);
         _updateDriverMarker(latLng, position.heading);
 
         if (mapController != null) {
@@ -223,24 +226,44 @@ class HomeController extends GetxController {
     });
   }
 
-  void _sendLocationUpdateToSocket(Position position) {
+  DateTime? _lastEconomyLocationUpdate;
+
+  void _sendLocationUpdate(Position position) {
     try {
-      final socketService = Get.find<SocketService>();
-      if (!socketService.isConnected.value) return;
+      final isEconomy = Get.isRegistered<AppConfigService>() && Get.find<AppConfigService>().isEconomyMode;
 
-      final driverIdValue = StorageService().read(_driverIdKey);
-      final String? driverId = driverIdValue?.toString();
-      if (driverId == null) return;
+      if (isEconomy) {
+        final now = DateTime.now();
+        if (_lastEconomyLocationUpdate != null && now.difference(_lastEconomyLocationUpdate!) < const Duration(seconds: 10)) {
+          return; // Throttle API requests in Economy mode to every 10 seconds
+        }
+        _lastEconomyLocationUpdate = now;
 
-      final locationData = {
-        "type": "driver_location",
-        "driver_id": int.tryParse(driverId) ?? 0,
-        "latitude": position.latitude,
-        "longitude": position.longitude,
-      };
-      socketService.send(locationData);
+        ApiClient().post(ApiEndpoints.updateLocation, data: {
+          "latitude": position.latitude,
+          "longitude": position.longitude,
+          "bearing": position.heading,
+        }).then((_) {}, onError: (e) {
+          print("Error sending location update via API: $e");
+        });
+      } else {
+        final socketService = Get.find<SocketService>();
+        if (!socketService.isConnected.value) return;
+
+        final driverIdValue = StorageService().read(_driverIdKey);
+        final String? driverId = driverIdValue?.toString();
+        if (driverId == null) return;
+
+        final locationData = {
+          "type": "driver_location",
+          "driver_id": int.tryParse(driverId) ?? 0,
+          "latitude": position.latitude,
+          "longitude": position.longitude,
+        };
+        socketService.send(locationData);
+      }
     } catch (e) {
-      print("Error sending location update to socket: $e");
+      print("Error sending location update: $e");
     }
   }
 
@@ -270,7 +293,7 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> loadDashboard() async {
+    Future<void> loadDashboard() async {
     isLoading.value = true;
     try {
       final data = await _repository.loadDashboard();
@@ -280,6 +303,16 @@ class HomeController extends GetxController {
       todayEarnings.value = (data['earnings'] as num? ?? 0.0).toDouble();
       if (data['wallet_balance'] != null) {
         walletBalance.value = (data['wallet_balance'] as num).toDouble();
+      }
+
+      if (data['driver'] != null && Get.isRegistered<SocketService>()) {
+        try {
+          final driverData = data['driver'] as Map<String, dynamic>;
+          final driver = DriverModel.fromJson(driverData);
+          Get.find<SocketService>().currentDriver.value = driver;
+        } catch (e) {
+          debugPrint('Error parsing driver from dashboard: $e');
+        }
       }
 
       final recent = data['recentBookings'];

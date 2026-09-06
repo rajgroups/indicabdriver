@@ -15,6 +15,7 @@ import 'package:indicab_driver/controllers/HomeController.dart';
 import 'package:indicab_driver/services/SecureStorageService.dart';
 import 'package:indicab_driver/services/StorageService.dart';
 import 'package:indicab_driver/utils/AppUpdateHelper.dart';
+import 'package:indicab_driver/services/AppConfigService.dart';
 
 /// A map to hold event handlers.
 typedef EventCallback = void Function(dynamic data);
@@ -67,6 +68,11 @@ class SocketService extends GetxService with WidgetsBindingObserver {
   /// Establishes a connection to the WebSocket server.
   /// It stores the token for automatic reconnection.
   Future<void> connect(String token) async {
+    if (Get.isRegistered<AppConfigService>() && Get.find<AppConfigService>().isEconomyMode) {
+      print('WebSocket: Connection aborted, currently in Economy Mode.');
+      return;
+    }
+
     _token = token;
     _shouldReconnect = true;
     final url = '$_baseUrl?token=$_token';
@@ -111,6 +117,10 @@ class SocketService extends GetxService with WidgetsBindingObserver {
 
   Future<void> ensureConnected() async {
     if (isConnected.value || !hasToken) {
+      return;
+    }
+    
+    if (Get.isRegistered<AppConfigService>() && Get.find<AppConfigService>().isEconomyMode) {
       return;
     }
 

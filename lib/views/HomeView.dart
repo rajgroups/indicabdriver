@@ -20,9 +20,6 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final sheetTopOffset = mediaQuery.size.height * 0.4;
-
     return Scaffold(
       backgroundColor: _kBg,
       body: Obx(() {
@@ -31,105 +28,15 @@ class HomeView extends GetView<HomeController> {
             child: CircularProgressIndicator(color: _kNavy),
           );
         }
+
         return Stack(
           children: [
-            const _DummyMap(),
-            SafeArea(
-              child: _TopBar(
-                isOnline: controller.isOnline.value,
-                onSettings: () => _showProfileSheet(controller),
-              ),
-            ),
-            Positioned(
-              top: mediaQuery.padding.top + 84,
-              right: 16,
-              child: _MapControlButton(
-                icon: Icons.explore_rounded,
-                onTap: () =>
-                    controller.focusCurrentLocation(resetBearing: true),
-                isLoading: controller.isLocating.value,
-                tooltip: 'Reset compass',
-              ),
-            ),
-            Positioned(
-              right: 16,
-              bottom: sheetTopOffset + 16,
-              child: _MapControlButton(
-                icon: Icons.my_location_rounded,
-                onTap: controller.focusCurrentLocation,
-                isLoading: controller.isLocating.value,
-                tooltip: 'Show current location',
-              ),
-            ),
-            DraggableScrollableSheet(
-              initialChildSize: 0.4,
-              minChildSize: 0.4,
-              maxChildSize: 0.85,
-              builder:
-                  (BuildContext context, ScrollController scrollController) {
-                return Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(24),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x0F000000),
-                        blurRadius: 16,
-                        offset: Offset(0, -4),
-                      ),
-                    ],
-                  ),
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildDragHandle(),
-                        const SizedBox(height: 12),
-                        _StatusCard(
-                          isOnline: controller.isOnline.value,
-                          onToggle: controller.toggleOnline,
-                        ),
-                        const SizedBox(height: 16),
-                        if (controller.walletBalance.value <= 0) ...[
-                          ModernTraditionalZeroWalletCard(
-                            onRecharge: controller.showRechargeDialog,
-                            balance: controller.walletBalance.value,
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        _EarningsCard(
-                          earnings: controller.todayEarnings.value,
-                          trips: controller.todayTrips.value,
-                          rating: controller.rating.value,
-                        ),
-                        const SizedBox(height: 16),
-                        _QuickActions(
-                          onSupport: () => Get.snackbar(
-                            'Support',
-                            'Contacting Indicab Support...',
-                            backgroundColor: Colors.white,
-                          ),
-                          onHistory: () =>
-                              Get.toNamed(RouteNames.rideHistory),
-                          onEarnings: () =>
-                              Get.toNamed(RouteNames.rideHistory),
-                        ),
-                        const SizedBox(height: 16),
-                        _RecentTrips(
-                          trips: controller.recentTrips,
-                          onSeeAll: () =>
-                              Get.toNamed(RouteNames.rideHistory),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+            // ── Main Content: Dashboard or Map ───────────────────────
+            controller.showMapView.value
+                ? _buildMapView(context)
+                : _buildDashboardView(context),
+
+            // ── Incoming Ride Overlay (always on top) ────────────────
             if (controller.showIncomingRequest.value &&
                 controller.incomingRequest.value != null)
               _IncomingRideCard(
@@ -143,6 +50,252 @@ class HomeView extends GetView<HomeController> {
           ],
         );
       }),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // GPay-style Dashboard View (NO map loaded = zero API cost)
+  // ════════════════════════════════════════════════════════════════════
+  Widget _buildDashboardView(BuildContext context) {
+    final driver = controller.currentDriver;
+    final name = driver?.name?.trim().isNotEmpty == true
+        ? driver!.name!.trim()
+        : 'Driver';
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'D';
+    final vehicleInfo = driver?.vehicle != null
+        ? '${driver!.vehicle!.registrationNumber ?? ''} • ${driver.vehicle!.typeName ?? 'Car'}'
+        : null;
+
+    return Stack(
+      children: [
+        // Scrollable content
+        CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // ── Top bar (navy) ──────────────────────────────────
+            SliverToBoxAdapter(
+              child: SafeArea(
+                bottom: false,
+                child: _TopBar(
+                  isOnline: controller.isOnline.value,
+                  onSettings: () => _showProfileSheet(controller),
+                ),
+              ),
+            ),
+
+            // ── Greeting / Driver Hero Card ─────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: _DriverGreetingCard(
+                  name: name,
+                  initial: initial,
+                  isOnline: controller.isOnline.value,
+                  vehicleInfo: vehicleInfo,
+                  rating: controller.rating.value,
+                ),
+              ),
+            ),
+
+            // ── Status Toggle ───────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: _StatusCard(
+                  isOnline: controller.isOnline.value,
+                  onToggle: controller.toggleOnline,
+                ),
+              ),
+            ),
+
+            // ── Wallet Warning ──────────────────────────────────
+            if (controller.walletBalance.value <= 0)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: ModernTraditionalZeroWalletCard(
+                    onRecharge: controller.showRechargeDialog,
+                    balance: controller.walletBalance.value,
+                  ),
+                ),
+              ),
+
+            // ── Earnings ────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: _EarningsCard(
+                  earnings: controller.todayEarnings.value,
+                  trips: controller.todayTrips.value,
+                  rating: controller.rating.value,
+                ),
+              ),
+            ),
+
+            // ── Quick Actions ───────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: _QuickActions(
+                  onSupport: () => Get.snackbar(
+                    'Support',
+                    'Contacting Indicab Support...',
+                    backgroundColor: Colors.white,
+                  ),
+                  onHistory: () => Get.toNamed(RouteNames.rideHistory),
+                  onEarnings: () => Get.toNamed(RouteNames.rideHistory),
+                ),
+              ),
+            ),
+
+            // ── Recent Trips ────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: _RecentTrips(
+                  trips: controller.recentTrips,
+                  onSeeAll: () => Get.toNamed(RouteNames.rideHistory),
+                ),
+              ),
+            ),
+
+            // Bottom padding for FAB clearance
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 90),
+            ),
+          ],
+        ),
+
+        // ── Floating "View Map" Button ──────────────────────────
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 16,
+          child: _ViewMapButton(
+            onTap: () => controller.showMapView.value = true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // Map View (existing layout, only loaded on demand)
+  // ════════════════════════════════════════════════════════════════════
+  Widget _buildMapView(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final sheetTopOffset = mediaQuery.size.height * 0.4;
+
+    return Stack(
+      children: [
+        const _DummyMap(),
+        SafeArea(
+          child: _TopBar(
+            isOnline: controller.isOnline.value,
+            onSettings: () => _showProfileSheet(controller),
+          ),
+        ),
+        Positioned(
+          top: mediaQuery.padding.top + 84,
+          right: 16,
+          child: _MapControlButton(
+            icon: Icons.explore_rounded,
+            onTap: () =>
+                controller.focusCurrentLocation(resetBearing: true),
+            isLoading: controller.isLocating.value,
+            tooltip: 'Reset compass',
+          ),
+        ),
+        Positioned(
+          right: 16,
+          bottom: sheetTopOffset + 16,
+          child: _MapControlButton(
+            icon: Icons.my_location_rounded,
+            onTap: controller.focusCurrentLocation,
+            isLoading: controller.isLocating.value,
+            tooltip: 'Show current location',
+          ),
+        ),
+        // ── Back to Dashboard button ────────────────────────────
+        Positioned(
+          top: mediaQuery.padding.top + 84,
+          left: 16,
+          child: _MapControlButton(
+            icon: Icons.dashboard_rounded,
+            onTap: () => controller.showMapView.value = false,
+            tooltip: 'Back to Dashboard',
+          ),
+        ),
+        DraggableScrollableSheet(
+          initialChildSize: 0.4,
+          minChildSize: 0.4,
+          maxChildSize: 0.85,
+          builder:
+              (BuildContext context, ScrollController scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x0F000000),
+                    blurRadius: 16,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildDragHandle(),
+                    const SizedBox(height: 12),
+                    _StatusCard(
+                      isOnline: controller.isOnline.value,
+                      onToggle: controller.toggleOnline,
+                    ),
+                    const SizedBox(height: 16),
+                    if (controller.walletBalance.value <= 0) ...[
+                      ModernTraditionalZeroWalletCard(
+                        onRecharge: controller.showRechargeDialog,
+                        balance: controller.walletBalance.value,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    _EarningsCard(
+                      earnings: controller.todayEarnings.value,
+                      trips: controller.todayTrips.value,
+                      rating: controller.rating.value,
+                    ),
+                    const SizedBox(height: 16),
+                    _QuickActions(
+                      onSupport: () => Get.snackbar(
+                        'Support',
+                        'Contacting Indicab Support...',
+                        backgroundColor: Colors.white,
+                      ),
+                      onHistory: () =>
+                          Get.toNamed(RouteNames.rideHistory),
+                      onEarnings: () =>
+                          Get.toNamed(RouteNames.rideHistory),
+                    ),
+                    const SizedBox(height: 16),
+                    _RecentTrips(
+                      trips: controller.recentTrips,
+                      onSeeAll: () =>
+                          Get.toNamed(RouteNames.rideHistory),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -295,153 +448,310 @@ void _showProfileSheet(HomeController controller) {
           ? driver!.status!.trim()
           : 'Active';
       final balance = controller.walletBalance.value;
+      final initial = name.isNotEmpty ? name[0].toUpperCase() : 'D';
+      final isOnline = controller.isOnline.value;
 
       return SafeArea(
         child: Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            color: Color(0xFFF7F8FC),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // ── Drag Handle ─────────────────────────────────────────
               const SizedBox(height: 10),
               Container(
-                width: 46,
-                height: 5,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
-                  color: _kBorder,
+                  color: Colors.black.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
+              const SizedBox(height: 4),
+
+              // ── Hero Header Card (Dark Gradient) ────────────────────
               Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Profile & Settings',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: _kNavy,
-                      ),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: _kBorder),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _kNavy.withValues(alpha: 0.05),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1A1A2E).withValues(alpha: 0.35),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
-                      child: Row(
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // Avatar with ring
+                      Stack(
                         children: [
                           Container(
-                            width: 56,
-                            height: 56,
+                            width: 66,
+                            height: 66,
                             decoration: BoxDecoration(
-                              color: _kNavy.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(18),
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  _kGreen,
+                                  _kGreen.withValues(alpha: 0.6),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _kGreen.withValues(alpha: 0.4),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
                             child: Center(
                               child: Text(
-                                name.isNotEmpty ? name[0].toUpperCase() : 'D',
+                                initial,
                                 style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: _kNavy,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w800,
-                                    color: _kNavy,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  phone,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: _kMuted,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  email,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: _kMuted,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                          // Online indicator dot
+                          Positioned(
+                            bottom: 2,
+                            right: 2,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: isOnline ? _kGreen : _kRed,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFF16213E), width: 2),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _ProfileInfoTile(
-                            label: 'Wallet',
-                            value: '₹${balance.toStringAsFixed(2)}',
-                            icon: Icons.account_balance_wallet_rounded,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ProfileInfoTile(
-                            label: 'Status',
-                            value: status,
-                            icon: Icons.verified_rounded,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    OutlinedButton.icon(
-                      onPressed: controller.logout,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _kRed,
-                        side: const BorderSide(color: _kRed),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                      const SizedBox(width: 16),
+                      // Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.phone_rounded, size: 12, color: Colors.white.withValues(alpha: 0.55)),
+                                const SizedBox(width: 5),
+                                Flexible(
+                                  child: Text(
+                                    phone,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white.withValues(alpha: 0.65),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                Icon(Icons.email_rounded, size: 12, color: Colors.white.withValues(alpha: 0.55)),
+                                const SizedBox(width: 5),
+                                Flexible(
+                                  child: Text(
+                                    email,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white.withValues(alpha: 0.65),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            
+                            // Vehicle details if available
+                            if (driver?.vehicle != null) ...[
+                              const SizedBox(height: 3),
+                              Row(
+                                children: [
+                                  Icon(Icons.directions_car_rounded, size: 12, color: Colors.white.withValues(alpha: 0.55)),
+                                  const SizedBox(width: 5),
+                                  Flexible(
+                                    child: Text(
+                                      "${driver!.vehicle!.registrationNumber ?? 'N/A'} • ${driver.vehicle!.typeName ?? 'Car'}",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white.withValues(alpha: 0.65),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      icon: const Icon(Icons.logout_rounded, size: 20),
-                      label: const Text(
-                        'Logout',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      // Status badge
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: isOnline
+                                  ? _kGreen.withValues(alpha: 0.2)
+                                  : _kRed.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isOnline
+                                    ? _kGreen.withValues(alpha: 0.5)
+                                    : _kRed.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Text(
+                              isOnline ? 'Online' : 'Offline',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: isOnline ? _kGreen : _kRed,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Stats Row ────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.account_balance_wallet_rounded,
+                        iconColor: const Color(0xFF00C853),
+                        label: 'Wallet Balance',
+                        value: '₹${balance.toStringAsFixed(2)}',
+                        bgColor: const Color(0xFFEAFBF1),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.verified_rounded,
+                        iconColor: const Color(0xFF6C63FF),
+                        label: 'Account Status',
+                        value: status.isNotEmpty ? status[0].toUpperCase() + status.substring(1) : 'Active',
+                        bgColor: const Color(0xFFF0EEFF),
                       ),
                     ),
                   ],
                 ),
               ),
+
+              // ── Menu Items ───────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFEEEFF3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _SheetMenuItem(
+                        icon: Icons.map_rounded,
+                        iconColor: const Color(0xFF0288D1),
+                        iconBg: const Color(0xFF0288D1).withValues(alpha: 0.08),
+                        title: 'Live Map',
+                        onTap: () {
+                          Get.back(); // Close sheet
+                          controller.showMapView.value = true;
+                        },
+                      ),
+                      _SheetMenuDivider(),
+                      _SheetMenuItem(
+                        icon: Icons.privacy_tip_outlined,
+                        iconColor: _kGreen,
+                        iconBg: _kGreen.withValues(alpha: 0.08),
+                        title: 'Privacy Policy',
+                        onTap: () => Get.toNamed(
+                          RouteNames.cmsPage,
+                          arguments: {'slug': 'privacy-policy', 'title': 'Privacy Policy'},
+                        ),
+                      ),
+                      _SheetMenuDivider(),
+                      _SheetMenuItem(
+                        icon: Icons.description_outlined,
+                        iconColor: const Color(0xFF6C63FF),
+                        iconBg: const Color(0xFF6C63FF).withValues(alpha: 0.08),
+                        title: 'Terms & Conditions',
+                        onTap: () => Get.toNamed(
+                          RouteNames.cmsPage,
+                          arguments: {'slug': 'terms-and-conditions', 'title': 'Terms & Conditions'},
+                        ),
+                      ),
+                      _SheetMenuDivider(),
+                      _SheetMenuItem(
+                        icon: Icons.logout_rounded,
+                        iconColor: _kRed,
+                        iconBg: _kRed.withValues(alpha: 0.08),
+                        title: 'Logout',
+                        titleColor: _kRed,
+                        onTap: controller.logout,
+                        showArrow: false,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 18),
             ],
           ),
         ),
@@ -452,51 +762,365 @@ void _showProfileSheet(HomeController controller) {
   );
 }
 
-class _ProfileInfoTile extends StatelessWidget {
-  const _ProfileInfoTile({
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.icon,
+    required this.iconColor,
     required this.label,
     required this.value,
-    required this.icon,
+    required this.bgColor,
   });
 
+  final IconData icon;
+  final Color iconColor;
   final String label;
   final String value;
-  final IconData icon;
+  final Color bgColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bgColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: _kNavy, size: 20),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
           const SizedBox(height: 10),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: _kMuted,
+              color: Colors.black.withValues(alpha: 0.45),
               fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 13,
-              color: _kNavy,
-              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              color: Color(0xFF1A1A2E),
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SheetMenuItem extends StatelessWidget {
+  const _SheetMenuItem({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    required this.title,
+    required this.onTap,
+    this.titleColor = const Color(0xFF1A1A2E),
+    this.showArrow = true,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String title;
+  final VoidCallback onTap;
+  final Color titleColor;
+  final bool showArrow;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: titleColor,
+                  ),
+                ),
+              ),
+              if (showArrow)
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: Colors.black.withValues(alpha: 0.25),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetMenuDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 70),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: Colors.black.withValues(alpha: 0.06),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// GPay-style Driver Greeting Card
+// ═══════════════════════════════════════════════════════════════════════
+class _DriverGreetingCard extends StatelessWidget {
+  const _DriverGreetingCard({
+    required this.name,
+    required this.initial,
+    required this.isOnline,
+    required this.rating,
+    this.vehicleInfo,
+  });
+
+  final String name;
+  final String initial;
+  final bool isOnline;
+  final double rating;
+  final String? vehicleInfo;
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1A1A2E).withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Avatar
+          Stack(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      _kGreen,
+                      _kGreen.withValues(alpha: 0.6),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 1,
+                right: 1,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: isOnline ? _kGreen : _kRed,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF16213E), width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _greeting(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                if (vehicleInfo != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.directions_car_rounded, size: 12, color: Colors.white.withValues(alpha: 0.5)),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          vehicleInfo!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Rating badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  rating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Floating "View Map" Button
+// ═══════════════════════════════════════════════════════════════════════
+class _ViewMapButton extends StatelessWidget {
+  const _ViewMapButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1A1A2E).withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.map_rounded, color: Colors.white, size: 22),
+              SizedBox(width: 10),
+              Text(
+                'View Live Map',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

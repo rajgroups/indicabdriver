@@ -9,6 +9,7 @@ class RouteNames {
   static const activeRide = '/active-ride';
   static const findingDriver = '/finding-driver';
   static const partnerEnquiry = '/partner-enquiry';
+  static const cmsPage = '/cms-page';
 }
 
 
