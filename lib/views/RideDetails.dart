@@ -237,50 +237,28 @@ class RideDetailsScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // ── Action buttons ────────────────────────────────────
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          final item = rideItem ?? (bookingData != null ? RideHistoryItem.fromBookingData(bookingData) : null);
-                          if (item != null) {
-                            Get.to(() => InvoiceScreen(ride: item));
-                          } else {
-                            Get.snackbar('Invoice', 'Invoice details unavailable.');
-                          }
-                        },
-                        icon: const Icon(Icons.download_rounded),
-                        label: const Text('Invoice'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _kNavy,
-                          side: const BorderSide(color: _kBorder),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      final item = rideItem ?? (bookingData != null ? RideHistoryItem.fromBookingData(bookingData) : null);
+                      if (item != null) {
+                        Get.to(() => InvoiceScreen(ride: item));
+                      } else {
+                        Get.snackbar('Invoice', 'Invoice details unavailable.');
+                      }
+                    },
+                    icon: const Icon(Icons.download_rounded),
+                    label: const Text('Invoice'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _kNavy,
+                      side: const BorderSide(color: _kBorder),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => Get.offAllNamed(RouteNames.home),
-                        icon: const Icon(Icons.refresh_rounded),
-                        label: const Text(
-                          'Book Again',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _kNavy,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
