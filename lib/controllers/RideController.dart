@@ -112,7 +112,21 @@ class RideController extends GetxController with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       if (rideStatus.value != RideStatus.completed) {
         _startTracking();
-        fetchRoutePolyline(force: true);
+        
+        LocationHelper.getCurrentLocation().then((position) {
+          if (position != null) {
+            final latLng = LatLng(position.latitude, position.longitude);
+            currentDriverPosition.value = latLng;
+            currentDriverHeading.value = position.heading;
+            _updateMarkersState();
+            
+            if (polylines.isEmpty) {
+              fetchRoutePolyline(force: true);
+            } else {
+              _updatePolylineLocally(latLng);
+            }
+          }
+        });
       }
     }
   }
@@ -248,24 +262,13 @@ class RideController extends GetxController with WidgetsBindingObserver {
     final points = currentPolyline.points;
     if (points.length < 2) return;
 
-    // Delegate off-route checking to PolylineService
-    final isDeviated = _polylineService.checkDeviation(
+    // Delegate trimming (connecting driver to destination) to PolylineService
+    final trimmedPoints = _polylineService.trimPassedPoints(
       driverLatLng: driverLatLng,
       routePoints: points,
     );
 
-    if (isDeviated) {
-      // Off-route, recalculate
-      _recalculateRouteDebounced();
-    } else {
-      // Delegate trimming to PolylineService
-      final trimmedPoints = _polylineService.trimPassedPoints(
-        driverLatLng: driverLatLng,
-        routePoints: points,
-      );
-
-      polylines.assignAll(_polylineService.buildPolylines(trimmedPoints));
-    }
+    polylines.assignAll(_polylineService.buildPolylines(trimmedPoints));
   }
 
   Future<void> _updateMarkersState() async {
